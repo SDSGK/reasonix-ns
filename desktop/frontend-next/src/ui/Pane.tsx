@@ -80,6 +80,7 @@ import { loadFoldWorkPref, useFoldsTurnWork } from "../state/foldwork";
 import { ChangedFilesPill } from "./ChangedFilesPill";
 import { TurnDeliveries } from "./TurnDeliveries";
 import { AgentRailBar } from "./AgentRailBar";
+import { useSubagentNotices } from "./useSubagentNotices";
 import { RootMissingBanner } from "./RootMissingBanner";
 import { useConversationFiles } from "./useConversationFiles";
 import { NewAnswerAnchor } from "./NewAnswerLine";
@@ -331,6 +332,7 @@ function PaneView({ port, hub, rt, title, active, visible, sideHost, side, onFoc
   /* eslint-disable react-hooks/exhaustive-deps */
   const paired = useMemo(() => pairCheckpoints(s.items, checkpoints), [s.revision, checkpoints]);
   const rail = useMemo(() => railOf(s.items, s.executions, s.subagentPhase), [s.revision, s.executions, s.subagentPhase]);
+  useSubagentNotices(rail.tasks);
 
   const [clearedJobs, setClearedJobs] = useState<ReadonlySet<string>>(() => new Set());
   const jobs = useMemo(() => {
