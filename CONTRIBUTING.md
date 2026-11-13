@@ -13,7 +13,7 @@ everything you need to get started.
 ## Getting started
 
 ```bash
-git clone https://github.com/esengine/DeepSeek-Reasonix.git
+git clone https://github.com/SDSGK/DeepSeek-Reasonix.git
 cd DeepSeek-Reasonix
 go build ./cmd/reasonix    # builds the CLI binary
 go test ./...              # runs the full test suite
