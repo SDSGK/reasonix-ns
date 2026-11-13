@@ -22,6 +22,9 @@
   <a href="./LICENSE"><img src="https://img.shields.io/github/license/SDSGK/DeepSeek-Reasonix?style=flat-square&color=8b949e&labelColor=161b22" alt="license"/></a>
 </p>
 
+> [!NOTE]
+> This repository is an independent continuation of [esengine/DeepSeek-Reasonix](https://github.com/esengine/DeepSeek-Reasonix), which is no longer maintained as of 2026-11-12. Maintained by [@SDSGK](https://github.com/SDSGK): it no longer syncs with upstream — fixes, changes and releases happen here.
+
 <br/>
 
 <p align="center"><strong>Open source · MIT · runs on your computer, model of your choice</strong></p>

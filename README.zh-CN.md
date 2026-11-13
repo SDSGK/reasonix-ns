@@ -22,6 +22,9 @@
   <a href="./LICENSE"><img src="https://img.shields.io/github/license/SDSGK/DeepSeek-Reasonix?style=flat-square&color=8b949e&labelColor=161b22" alt="license"/></a>
 </p>
 
+> [!NOTE]
+> 本仓库自 [esengine/DeepSeek-Reasonix](https://github.com/esengine/DeepSeek-Reasonix)（上游已于 2026-11-12 停止维护）独立而来，由 [@SDSGK](https://github.com/SDSGK) 自行维护：不再与上游同步，后续的修复、变更与发布都在本仓库进行。
+
 <br/>
 
 <p align="center"><strong>开源 · MIT · 程序跑在你电脑上，模型自选</strong></p>
