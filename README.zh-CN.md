@@ -17,13 +17,10 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/SDSGK/DeepSeek-Reasonix/releases?q=studio-v&expanded=true"><img src="https://img.shields.io/github/v/release/SDSGK/DeepSeek-Reasonix.svg?filter=studio-v*&include_prereleases&style=flat-square&color=8250df&labelColor=161b22&label=studio%202.x" alt="Reasonix Studio 2.x"/></a>
-  <a href="https://github.com/SDSGK/DeepSeek-Reasonix/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/SDSGK/DeepSeek-Reasonix/ci.yml?style=flat-square&label=ci&labelColor=161b22&logo=githubactions&logoColor=white" alt="CI"/></a>
-  <a href="./LICENSE"><img src="https://img.shields.io/github/license/SDSGK/DeepSeek-Reasonix?style=flat-square&color=8b949e&labelColor=161b22" alt="license"/></a>
+  <a href="https://github.com/SDSGK/reasonix-ns/releases?q=studio-v&expanded=true"><img src="https://img.shields.io/github/v/release/SDSGK/reasonix-ns.svg?filter=studio-v*&include_prereleases&style=flat-square&color=8250df&labelColor=161b22&label=studio%202.x" alt="Reasonix Studio 2.x"/></a>
+  <a href="https://github.com/SDSGK/reasonix-ns/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/SDSGK/reasonix-ns/ci.yml?style=flat-square&label=ci&labelColor=161b22&logo=githubactions&logoColor=white" alt="CI"/></a>
+  <a href="./LICENSE"><img src="https://img.shields.io/github/license/SDSGK/reasonix-ns?style=flat-square&color=8b949e&labelColor=161b22" alt="license"/></a>
 </p>
-
-> [!NOTE]
-> 本仓库自 [esengine/DeepSeek-Reasonix](https://github.com/esengine/DeepSeek-Reasonix)（上游已于 2026-11-12 停止维护）独立而来，由 [@SDSGK](https://github.com/SDSGK) 自行维护：不再与上游同步，后续的修复、变更与发布都在本仓库进行。
 
 <br/>
 
@@ -50,7 +47,7 @@ Reasonix 是一个开源的 AI 编程助手。程序跑在你的电脑上；AI �
 
 下载、填模型密钥、打开项目。第一次用，从桌面应用 Studio 开始。
 
-1. 从[发布页](https://github.com/SDSGK/DeepSeek-Reasonix/releases?q=studio-v&expanded=true)下载并安装桌面应用 Reasonix Studio。
+1. 从[发布页](https://github.com/SDSGK/reasonix-ns/releases?q=studio-v&expanded=true)下载并安装桌面应用 Reasonix Studio。
 2. 打开应用，按提示填入模型服务商和密钥。
 3. 打开你的项目文件夹，写下想做的事，例如“给 http 客户端加上失败重试”。
 4. 按你选的档位，该问你的操作它会先停下来问；同意就继续，不同意就拒绝。
@@ -70,7 +67,7 @@ Reasonix 是一个开源的 AI 编程助手。程序跑在你的电脑上；AI �
 
 DeepSeek Harness（`dsh`）可以通过 ACP 把任务交给 Reasonix 作为子智能体去做。本仓库为此发布了一个插件索引：
 
-1. 在运行 `dsh` 的机器上先运行 `reasonix setup`。在 DSH 网页界面打开“自定义插件市场”（插件，更多），再到 Discover 页添加这个索引：`https://raw.githubusercontent.com/SDSGK/DeepSeek-Reasonix/studio/integrations/dsh-plugin/market-index.json`
+1. 在运行 `dsh` 的机器上先运行 `reasonix setup`。在 DSH 网页界面打开“自定义插件市场”（插件，更多），再到 Discover 页添加这个索引：`https://raw.githubusercontent.com/SDSGK/reasonix-ns/studio/integrations/dsh-plugin/market-index.json`
 2. 从中安装“Reasonix subagent”。
 3. 打开这个插件的页面，把它的开关打开。关着的时候模型没有 `reasonix` 工具，可能改在自己的 shell 里直接运行 `reasonix -p`，看起来像委派，其实不是。
 
@@ -83,7 +80,7 @@ DeepSeek Harness（`dsh`）可以通过 ACP 把任务交给 Reasonix 作为子�
 
 | 版本线 | 分支 | 状态 | 获取方式 |
 | --- | --- | --- | --- |
-| **Reasonix 2.x** | `studio`（当前分支） | 活跃开发 | [Studio 发布页](https://github.com/SDSGK/DeepSeek-Reasonix/releases?q=studio-v&expanded=true) |
+| **Reasonix 2.x** | `studio`（当前分支） | 活跃开发 | [Studio 发布页](https://github.com/SDSGK/reasonix-ns/releases?q=studio-v&expanded=true) |
 | Reasonix 1.x（历史） | `main-v2` | 上游已冻结 | `npm i -g reasonix`（原渠道） |
 
 - [2.x 路线图](./docs/ROADMAP.md)（英文）：2.x 还要交付什么、如何发布、哪些决定尚未做出。
@@ -112,7 +109,7 @@ DeepSeek Harness（`dsh`）可以通过 ACP 把任务交给 Reasonix 作为子�
 
 ### Reasonix Studio（2.x）
 
-从最新的 [Studio 发布](https://github.com/SDSGK/DeepSeek-Reasonix/releases?q=studio-v&expanded=true)
+从最新的 [Studio 发布](https://github.com/SDSGK/reasonix-ns/releases?q=studio-v&expanded=true)
 下载对应平台的安装包（标签为 `studio-v2.*`；`-rc.N` 等候选版本标为预发布）：
 
 | 平台 | 安装包 | 架构 |
@@ -140,8 +137,8 @@ DeepSeek Harness（`dsh`）可以通过 ACP 把任务交给 Reasonix 作为子�
 克隆仓库并构建 `studio` 分支（2.x）：
 
 ```sh
-git clone https://github.com/SDSGK/DeepSeek-Reasonix.git
-cd DeepSeek-Reasonix
+git clone https://github.com/SDSGK/reasonix-ns.git
+cd reasonix-ns
 git switch studio
 ```
 
@@ -187,7 +184,6 @@ CLI 进阶用法和详细配置见 **[CLI 命令参考](./docs/CLI.zh-CN.md)**�
 
 ## 文档
 
-- **维护者：** [Wiki](./docs/WIKI.md) —— 架构关系图、CI 与测试、配置速查
 - **开始使用：** [指南](./docs/GUIDE.zh-CN.md) ·
   [CLI 命令参考](./docs/CLI.zh-CN.md) · [配置路径](./docs/CONFIG_PATHS.md) ·
   [ACP 编辑器接入](./docs/ACP.md) · [在 DeepSeek Harness 中使用](./docs/DSH.md)
@@ -233,5 +229,5 @@ Reasonix 今天的样子 —— 上游最终版本发布时按 commit 数统计�
 <p align="center">
   <sub>MIT —— 见 <a href="./LICENSE">LICENSE</a></sub>
   <br/>
-  <sub>由 <a href="https://github.com/esengine/DeepSeek-Reasonix">esengine/DeepSeek-Reasonix</a> 社区共建 · 由 <a href="https://github.com/SDSGK/DeepSeek-Reasonix">SDSGK/DeepSeek-Reasonix</a> 继续维护</sub>
+  <sub>由 <a href="https://github.com/esengine/DeepSeek-Reasonix">esengine/DeepSeek-Reasonix</a> 社区共建 · 由 <a href="https://github.com/SDSGK/reasonix-ns">SDSGK/reasonix-ns</a> 继续维护</sub>
 </p>

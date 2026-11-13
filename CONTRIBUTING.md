@@ -13,8 +13,8 @@ everything you need to get started.
 ## Getting started
 
 ```bash
-git clone https://github.com/SDSGK/DeepSeek-Reasonix.git
-cd DeepSeek-Reasonix
+git clone https://github.com/SDSGK/reasonix-ns.git
+cd reasonix-ns
 go build ./cmd/reasonix    # builds the CLI binary
 go test ./...              # runs the full test suite
 ```

@@ -1,6 +1,6 @@
 # 维护者 Wiki（Maintainer Wiki）
 
-> 本文档面向 **SDSGK/DeepSeek-Reasonix** 的维护者：一张图看懂项目结构、模块依赖、
+> 本文档面向 **SDSGK/reasonix-ns** 的维护者：一张图看懂项目结构、模块依赖、
 > 自动化测试与配置模块的位置。上游 esengine/DeepSeek-Reasonix 已于 2026-11-12
 > 停止维护，本仓库自其 `studio` 分支（2.x 线）独立维护。
 >
@@ -199,7 +199,7 @@ make acp-conformance # ACP 一致性
 
 ## 8. 维护操作备忘
 
-- **推送**：`git push origin studio`（HTTPS 需 PAT；SSH 则先 `git remote set-url origin git@github.com:SDSGK/DeepSeek-Reasonix.git`）
+- **推送**：`git push origin studio`（HTTPS 需 PAT；SSH 则先 `git remote set-url origin git@github.com:SDSGK/reasonix-ns.git`）
 - **CI 启用**：Actions 页一次性确认启用；`e2e-bot` 需在 Settings → Secrets 配 `DEEPSEEK_API_KEY`
 - **发版**（当需要时）：tag `studio-vX.Y.Z` → 保留的 workflows 不含发布流水线（上游的 release/signing/deploy 已删），需自行搭建或复用 `make cross` 产物手动发 Release
 - **上游动向**（可选）：`git fetch https://github.com/esengine/DeepSeek-Reasonix.git studio` 临时查看，不要加成 remote

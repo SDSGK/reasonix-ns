@@ -22,7 +22,7 @@
       "author": "Reasonix",
       "homepage": "https://reasonix.io",
       "repository": {
-        "url": "https://github.com/SDSGK/DeepSeek-Reasonix",
+        "url": "https://github.com/SDSGK/reasonix-ns",
         "directory": "integrations/dsh-plugin"
       },
       "metadata": {

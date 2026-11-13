@@ -17,9 +17,9 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/SDSGK/DeepSeek-Reasonix/releases?q=studio-v&expanded=true"><img src="https://img.shields.io/github/v/release/SDSGK/DeepSeek-Reasonix.svg?filter=studio-v*&include_prereleases&style=flat-square&color=8250df&labelColor=161b22&label=studio%202.x" alt="Reasonix Studio 2.x"/></a>
-  <a href="https://github.com/SDSGK/DeepSeek-Reasonix/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/SDSGK/DeepSeek-Reasonix/ci.yml?style=flat-square&label=ci&labelColor=161b22&logo=githubactions&logoColor=white" alt="CI"/></a>
-  <a href="./LICENSE"><img src="https://img.shields.io/github/license/SDSGK/DeepSeek-Reasonix?style=flat-square&color=8b949e&labelColor=161b22" alt="license"/></a>
+  <a href="https://github.com/SDSGK/reasonix-ns/releases?q=studio-v&expanded=true"><img src="https://img.shields.io/github/v/release/SDSGK/reasonix-ns.svg?filter=studio-v*&include_prereleases&style=flat-square&color=8250df&labelColor=161b22&label=studio%202.x" alt="Reasonix Studio 2.x"/></a>
+  <a href="https://github.com/SDSGK/reasonix-ns/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/SDSGK/reasonix-ns/ci.yml?style=flat-square&label=ci&labelColor=161b22&logo=githubactions&logoColor=white" alt="CI"/></a>
+  <a href="./LICENSE"><img src="https://img.shields.io/github/license/SDSGK/reasonix-ns?style=flat-square&color=8b949e&labelColor=161b22" alt="license"/></a>
 </p>
 
 > [!NOTE]
@@ -50,7 +50,7 @@ You pick the model: a DeepSeek preset is built in, any OpenAI-compatible service
 
 Download, add a model key, open a project. New here? Start with the Studio desktop app.
 
-1. Download and install the desktop app, Reasonix Studio, from the [releases page](https://github.com/SDSGK/DeepSeek-Reasonix/releases?q=studio-v&expanded=true).
+1. Download and install the desktop app, Reasonix Studio, from the [releases page](https://github.com/SDSGK/reasonix-ns/releases?q=studio-v&expanded=true).
 2. Open it and enter your model provider and key when asked.
 3. Open your project folder and write what you want, for example "add retry on failure to the http client".
 4. At the level you chose, it stops and asks before anything that needs your say-so. Allow it to continue, or refuse.
@@ -70,7 +70,7 @@ All four are the same program underneath. What follows is for advanced users and
 
 DeepSeek Harness (`dsh`) can hand a task to Reasonix as a subagent over ACP. This repository publishes a plugin index for it:
 
-1. Run `reasonix setup` on the machine that runs `dsh`. In the DSH Web UI turn on Custom plugin markets (Plugins, More) and add this index in the Discover tab: `https://raw.githubusercontent.com/SDSGK/DeepSeek-Reasonix/studio/integrations/dsh-plugin/market-index.json`
+1. Run `reasonix setup` on the machine that runs `dsh`. In the DSH Web UI turn on Custom plugin markets (Plugins, More) and add this index in the Discover tab: `https://raw.githubusercontent.com/SDSGK/reasonix-ns/studio/integrations/dsh-plugin/market-index.json`
 2. Install "Reasonix subagent" from it.
 3. Open the plugin's page and turn its switch on. While it is off the model has no `reasonix` tool and may run `reasonix -p` in its own shell, which looks like a delegation and is not one.
 
@@ -84,7 +84,7 @@ from the original project and is not rebuilt here.
 
 | Line | Branch | Status | Get it |
 | --- | --- | --- | --- |
-| **Reasonix 2.x** | `studio` (this branch) | Active development | [Studio releases](https://github.com/SDSGK/DeepSeek-Reasonix/releases?q=studio-v&expanded=true) |
+| **Reasonix 2.x** | `studio` (this branch) | Active development | [Studio releases](https://github.com/SDSGK/reasonix-ns/releases?q=studio-v&expanded=true) |
 | Reasonix 1.x (historical) | `main-v2` | Frozen upstream | `npm i -g reasonix` (original channel) |
 
 - [2.x roadmap](./docs/ROADMAP.md): what 2.x still has to deliver, how it ships,
@@ -119,7 +119,7 @@ Studio, and editor integrations all run the same local Reasonix engine.
 ### Reasonix Studio (2.x)
 
 Download the package for your platform from the latest
-[Studio release](https://github.com/SDSGK/DeepSeek-Reasonix/releases?q=studio-v&expanded=true)
+[Studio release](https://github.com/SDSGK/reasonix-ns/releases?q=studio-v&expanded=true)
 (tagged `studio-v2.*`; candidates such as `-rc.N` are marked as
 pre-releases):
 
@@ -150,8 +150,8 @@ selection, and workspace sessions.
 Clone the repository and build the `studio` branch (2.x):
 
 ```sh
-git clone https://github.com/SDSGK/DeepSeek-Reasonix.git
-cd DeepSeek-Reasonix
+git clone https://github.com/SDSGK/reasonix-ns.git
+cd reasonix-ns
 git switch studio
 ```
 
@@ -246,5 +246,5 @@ Special thanks to [**Bernardxu123**](https://github.com/Bernardxu123) for design
 <p align="center">
   <sub>MIT — see <a href="./LICENSE">LICENSE</a></sub>
   <br/>
-  <sub>Built by the community at <a href="https://github.com/esengine/DeepSeek-Reasonix">esengine/DeepSeek-Reasonix</a> · continued by <a href="https://github.com/SDSGK/DeepSeek-Reasonix">SDSGK/DeepSeek-Reasonix</a></sub>
+  <sub>Built by the community at <a href="https://github.com/esengine/DeepSeek-Reasonix">esengine/DeepSeek-Reasonix</a> · continued by <a href="https://github.com/SDSGK/reasonix-ns">SDSGK/reasonix-ns</a></sub>
 </p>
