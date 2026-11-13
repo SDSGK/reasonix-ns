@@ -13,6 +13,7 @@ const ROUTES = [
   // The hub's own surface, plus /rt — every pane's requests carry that prefix,
   // so without it a second session's traffic answers with the SPA shell.
   "/runtimes", "/tree", "/rt", "/remotes", "/side", "/terminals",
+  "/auth/token",
   "/appearance",
   "/agent-presets", "/agent-composition",
   "/events", "/history", "/status", "/balance", "/submit", "/cancel", "/approve", "/answer",

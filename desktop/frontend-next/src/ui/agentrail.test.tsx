@@ -16,14 +16,26 @@ const task = (id: string, running: boolean, durationMs?: number): Task =>
   }) as unknown as Task;
 
 describe("the delegate rail at the top of the conversation", () => {
-  it("shows one chip per running delegate and nothing when idle", () => {
-    const { container } = render(<AgentRailBar tasks={[task("a", true, 65_000), task("b", false)]} onOpen={vi.fn()} />);
+  it("shows running delegates first, then recent settled ones", () => {
+    const tasks = [task("s1", false), task("r1", true, 65_000), task("s2", false), task("r2", true)];
+    const { container } = render(<AgentRailBar tasks={tasks} onOpen={vi.fn()} />);
     const chips = container.querySelectorAll(".agentrail-chip");
-    expect(chips).toHaveLength(1);
-    expect(chips[0].textContent).toContain("1m"); // the elapsed time stays on the chip
+    expect(chips).toHaveLength(4); // a replayed session's finished delegates stay visible
+    expect(chips[0].getAttribute("data-status")).toBe("running");
+    expect(chips[1].getAttribute("data-status")).toBe("running");
+    expect(container.querySelector('[data-status="settled"]')).toBeTruthy();
+    expect(container.querySelector(".agentrail-pulse, [data-status='running']")).toBeTruthy();
+  });
 
-    const idle = render(<AgentRailBar tasks={[task("b", false)]} onOpen={vi.fn()} />);
-    expect(idle.container.querySelector(".agentrail")).toBeNull();
+  it("caps the rail once running delegates fill it", () => {
+    const tasks = Array.from({ length: 10 }, (_, i) => task(`r${i}`, true));
+    const { container } = render(<AgentRailBar tasks={tasks} onOpen={vi.fn()} />);
+    expect(container.querySelectorAll(".agentrail-chip")).toHaveLength(8);
+  });
+
+  it("renders nothing when the session has no delegates", () => {
+    const { container } = render(<AgentRailBar tasks={[]} onOpen={vi.fn()} />);
+    expect(container.querySelector(".agentrail")).toBeNull();
   });
 
   it("opens the clicked delegate's run", () => {

@@ -10,6 +10,29 @@
   border-bottom: 1px solid var(--line, #2a2a2e);
 }
 
+.agentrail-chip[data-status="running"]::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent, #4493f8);
+  animation: agentrail-pulse 1.6s ease-in-out infinite;
+}
+
+.agentrail-chip[data-status="settled"]::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--line, #2a2a2e);
+}
+
+@keyframes agentrail-pulse {
+  50% {
+    opacity: 0.35;
+  }
+}
+
 .agentrail-chip {
   display: inline-flex;
   align-items: center;
