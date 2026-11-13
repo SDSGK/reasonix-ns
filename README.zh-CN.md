@@ -187,6 +187,7 @@ CLI 进阶用法和详细配置见 **[CLI 命令参考](./docs/CLI.zh-CN.md)**�
 
 ## 文档
 
+- **维护者：** [Wiki](./docs/WIKI.md) —— 架构关系图、CI 与测试、配置速查
 - **开始使用：** [指南](./docs/GUIDE.zh-CN.md) ·
   [CLI 命令参考](./docs/CLI.zh-CN.md) · [配置路径](./docs/CONFIG_PATHS.md) ·
   [ACP 编辑器接入](./docs/ACP.md) · [在 DeepSeek Harness 中使用](./docs/DSH.md)

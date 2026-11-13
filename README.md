@@ -201,6 +201,7 @@ For advanced CLI usage and configuration, see the **[CLI reference](./docs/CLI.m
 
 ## Documentation
 
+- **Maintainers:** [Wiki](./docs/WIKI.md) — architecture map, CI & tests, config quick reference
 - **Getting started:** [Guide](./docs/GUIDE.md) · [CLI reference](./docs/CLI.md) ·
   [Configuration paths](./docs/CONFIG_PATHS.md) · [ACP editor integration](./docs/ACP.md) ·
   [Use from DeepSeek Harness](./docs/DSH.md)
