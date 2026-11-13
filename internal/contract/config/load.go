@@ -204,6 +204,7 @@ func (r Roots) loadForRoot(root string, migrateOnDisk, withProject bool) (*Confi
 	normalizeLegacyEffort(cfg)
 	cfg.ignoredLegacyStepLimits = normalizeLegacyAgentStepLimits(cfg)
 	normalizeRetiredAutoPlan(cfg)
+	cfg.Tools.expandPreset(cfg.addLoadWarning)
 	bringConfigForward(cfg)
 	if userDefaultModelExplicit {
 		restoreUnresolvableProjectDefaultModel(cfg, userDefaultModel)

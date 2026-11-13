@@ -172,6 +172,9 @@ offline = false  # set true when outbound network access is unavailable; prevent
 # go = "/opt/homebrew/bin/go"   # optional trusted executable path; workspace-local paths are not auto-executed
 
 [tools]
+# preset = "minimal"   # ""|"minimal": named whitelist applied when enabled is empty —
+#                       # file read/edit/write, shell lifecycle, grep/glob/ls, the
+#                       # capability proxy, context tools and the host-control surface.
 enabled = []   # empty = all built-in tools
 bash_timeout_seconds = 120   # foreground safety cap; set 0 for no tool-local cap
 protect_changed_files = true   # refuse a whole-file write over a change made since the agent last read or wrote the file

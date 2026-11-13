@@ -45,6 +45,10 @@ func (t ToolsConfig) listsSet() bool { return len(t.Enabled) > 0 || len(t.Disabl
 // spells out an empty enabled list; a delta writes only what is set.
 func renderToolLists(b *strings.Builder, c *Config, full bool) {
 	switch {
+	case c.Tools.Preset != "":
+		// The preset owns the enabled line: expansion happens at load, and
+		// re-rendering the expanded list would turn one line into dozens.
+		fmt.Fprintf(b, "preset = %q   # \"\"|%s: named whitelist applied when enabled is empty\n", c.Tools.Preset, ToolsPresetMinimal)
 	case len(c.Tools.Enabled) > 0:
 		fmt.Fprintf(b, "enabled = %s\n", renderStringArray(c.Tools.Enabled))
 	case full:

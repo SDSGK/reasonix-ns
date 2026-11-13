@@ -172,3 +172,76 @@ between turns. The golden boot contract records the enabled default surface.
 Optional tools (`glob`, `grep`, `ls`, `web_fetch`, MCP, skills, subagents, docs, session history, memory mutation, workflow, and so on) remain in the host registry for dispatch. The model lists, inspects, calls, or declines them via `use_capability` without changing the provider tool list.
 
 Execution settings change host planning / verification / review policy, not which tools appear on the provider-visible surface. The retired `connect_tool_source` path is no longer registered.
+
+## Result Channels: model-visible text vs user-visible cards
+
+A tool's `Execute` returns one provider-visible string. It is the only channel
+the model ever sees, it enters the canonical tool history verbatim, and
+provider serialization must never inject UI-only data into it. Anything meant
+for the human — preview cards, charts, diff rails, file-delivery cards — rides
+a separate host-rendered channel derived from the versioned result, is not
+serialized into the model context, and survives session restore through
+host-confirmed capability identities rather than through model-visible text.
+
+This split is deliberate: the model receives exactly the bytes it needs to
+continue work, while the UI gets free-form structure for display. The same
+principle is formalized elsewhere as separate `content` and `ui` result
+channels. Concrete instances of this contract:
+
+- `render_chart` returns a `chart_id` plus a text summary to the model; the
+  rows themselves are never sent to the model and render only as a card.
+- `present_files` returns a versioned result that stays in the canonical
+  history; live and restored cards render from the host-confirmed capability
+  identity, so compaction never changes what the user can open.
+- `import_web_image` returns `{path, alt, source}` for `render_surface`
+  instead of embedding image data in provider-visible text.
+- Writer tools return unified diffs as model-visible text; the transcript
+  renders them through the colourised diff rail configured by
+  `[cli] diff_formatter`, which never changes the bytes the model saw.
+
+Contract rules for new tools:
+
+1. If a result has a human-only projection, return the model-visible summary
+   plus a stable reference (id/path), and let the host render the rest.
+2. Never smuggle UI payloads (base64 images, full row dumps, markup) into the
+   provider-visible string; they burn context budget and break the schema
+   budget tests.
+3. Card data must be reconstructible from the versioned result or workspace
+   state after session restore; a card that cannot survive restore must
+   degrade to text in the canonical history.
+4. The separation is protected by the schema budget tests
+   (`internal/tools/builtin/schema_budget_test.go`) and the boot contract
+   test (`internal/assembly/boot.TestBootToolContractMatchesProviderVisibleSurface`).
+
+## 结果通道：模型可见文本与用户可见卡片
+
+工具的 `Execute` 只返回一个 provider 可见字符串：这是模型唯一能看到的通道，
+它按原文进入规范工具历史；provider 序列化绝不向其中注入仅 UI 使用的数据。
+所有面向人的内容——预览卡片、图表、diff 轨、文件交付卡片——走宿主渲染的
+独立通道，从版本化结果派生，不序列化进模型上下文，并依赖宿主确认的能力
+身份（而非模型可见文本）在会话恢复后仍然可用。
+
+这一分离是有意为之：模型只拿到继续工作所需的字节，界面获得自由的结构化
+渲染。同样的原则在别的框架里被形式化为分离的 `content` / `ui` 结果通道。
+本契约的具体实例：
+
+- `render_chart` 给模型 `chart_id` 和文本摘要；数据行从不进模型，只渲染成卡片。
+- `present_files` 的版本化结果保存在规范历史中；实时与恢复后的卡片由宿主
+  确认的能力身份渲染，压缩不改变用户能打开的内容。
+- `import_web_image` 返回 `{path, alt, source}` 供 `render_surface` 使用，
+  而不是把图片数据嵌进模型可见文本。
+- 写入类工具把 unified diff 作为模型可见文本返回；转录界面按
+  `[cli] diff_formatter` 配置的着色 diff 轨渲染，不改变模型看到的字节。
+
+新工具的契约规则：
+
+1. 结果存在仅人类可读的投影时，返回模型可见摘要加稳定引用（id/path），
+   其余交由宿主渲染。
+2. 绝不把 UI 载荷（base64 图片、整表数据、标记文本）塞进模型可见字符串；
+   那会烧上下文预算并破坏 schema 预算测试。
+3. 卡片数据必须能在会话恢复后从版本化结果或工作区状态重建；无法恢复的
+   卡片必须在规范历史中降级为文本。
+4. 该分离由 schema 预算测试（`internal/tools/builtin/schema_budget_test.go`）
+   与 boot 契约测试
+   （`internal/assembly/boot.TestBootToolContractMatchesProviderVisibleSurface`）
+   保护。

@@ -1146,6 +1146,11 @@ type AgentConfig struct {
 
 // ToolsConfig selects which built-in tools are enabled. Empty means all of them.
 type ToolsConfig struct {
+	// Preset applies a named whitelist before `enabled` is considered: ""
+	// keeps every built-in tool, "minimal" keeps the lean file + shell core
+	// (see tools_preset.go). An explicit non-empty enabled list wins over
+	// the preset.
+	Preset  string   `toml:"preset"`
 	Enabled []string `toml:"enabled"`
 	// Disabled removes tools by name from every surface; a project file can only add to it.
 	Disabled                 []string             `toml:"disabled"`
