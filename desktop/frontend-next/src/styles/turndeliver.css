@@ -1,0 +1,96 @@
+/* The turn's own deliveries above the input box: one collapsed line while the
+   transcript is being read, one click to the files and their diffs. */
+
+.turndeliver {
+  margin: 0 0 6px;
+  border: 1px solid var(--line, #2a2a2e);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.turndeliver-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 10px;
+  background: transparent;
+  border: 0;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+
+.turndeliver-head b {
+  font-weight: 600;
+  font-size: 12px;
+}
+
+.turndeliver-io {
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.turndeliver-io [data-io="up"] {
+  color: var(--add, #3fb950);
+}
+
+.turndeliver-io [data-io="down"] {
+  color: var(--del, #f85149);
+}
+
+.turndeliver-caret {
+  margin-left: auto;
+  opacity: 0.6;
+}
+
+.turndeliver-list {
+  list-style: none;
+  margin: 0;
+  padding: 4px 0;
+  border-top: 1px solid var(--line, #2a2a2e);
+  max-height: 40vh;
+  overflow: auto;
+}
+
+.turndeliver-list li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 3px 10px;
+  font-size: 12px;
+}
+
+.turndeliver-file {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: left;
+  background: transparent;
+  border: 0;
+  color: inherit;
+  font: inherit;
+  padding: 0;
+}
+
+button.turndeliver-file {
+  cursor: pointer;
+}
+
+button.turndeliver-file[data-active] {
+  color: var(--accent, #4493f8);
+}
+
+.turndeliver-hint {
+  opacity: 0.55;
+  font-size: 11px;
+}
+
+.turndeliver-diff {
+  border-top: 1px solid var(--line, #2a2a2e);
+  max-height: 50vh;
+  overflow: auto;
+}

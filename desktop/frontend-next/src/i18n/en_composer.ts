@@ -1,6 +1,10 @@
 // The turn starts here: drafting, attachments, run posture, and the two actions
 // that remain available while an agent is live.
 export const EN_COMPOSER: Record<string, string> = {
+  "本次改动 · {n} 个文件": "This turn · {n} files changed",
+  "点击文件名查看改动": "Click a file to view its diff",
+  "查看 {path} 的改动": "View the diff of {path}",
+  "活跃子智能体": "Active subagents",
   "工作目录准备": "Preparing workspace",
   "正在提交创建请求": "Submitting creation request",
   "正在检查起始分支": "Checking source branch",

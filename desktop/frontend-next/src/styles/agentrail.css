@@ -1,0 +1,42 @@
+/* The delegate rail at the top of the conversation: one chip per live
+   sub-agent. Background work never appears here — it stays on the meter
+   rail's own chips. An idle session renders nothing. */
+
+.agentrail {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--line, #2a2a2e);
+}
+
+.agentrail-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border: 1px solid var(--line, #2a2a2e);
+  border-radius: 999px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.agentrail-chip:hover {
+  border-color: var(--accent, #4493f8);
+}
+
+.agentrail-name {
+  font-weight: 600;
+  max-width: 24ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.agentrail-took {
+  opacity: 0.65;
+  font-variant-numeric: tabular-nums;
+}

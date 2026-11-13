@@ -78,6 +78,8 @@ import { LiveWork, useLiveWork } from "../state/foldpref";
 import { loadChangedFilesPref, useShowsChangedFiles } from "../state/changedfiles";
 import { loadFoldWorkPref, useFoldsTurnWork } from "../state/foldwork";
 import { ChangedFilesPill } from "./ChangedFilesPill";
+import { TurnDeliveries } from "./TurnDeliveries";
+import { AgentRailBar } from "./AgentRailBar";
 import { RootMissingBanner } from "./RootMissingBanner";
 import { useConversationFiles } from "./useConversationFiles";
 import { NewAnswerAnchor } from "./NewAnswerLine";
@@ -530,6 +532,7 @@ function PaneView({ port, hub, rt, title, active, visible, sideHost, side, onFoc
       <div className="pviews">
       <div className="worktree-stage-host" ref={setWorktreeTarget} hidden={tab !== "flow" || !worktreePhase}/>
 
+      <AgentRailBar tasks={rail.tasks} onOpen={(taskId) => { const call = rail.tasks.find((x) => x.id === taskId)?.tool.id; if (call) void openRun(call).catch(notify); }} />
       <PaneShown.Provider value={shown}>
       <LiveWork.Provider value={live}>
       <NewAnswerAnchor.Provider value={marker ? newAnswerAt : null}>
@@ -667,6 +670,7 @@ function PaneView({ port, hub, rt, title, active, visible, sideHost, side, onFoc
         {alert && <div className="cmpalert">{alert}</div>}
         <RootMissingBanner items={s.items} onPick={onOpenProject} />
         {pill && <ChangedFilesPill changes={tree?.changes ?? []} onOpen={openChanges} />}
+        <TurnDeliveries items={s.items} />
         <Composer queueStrip={<Queue queue={queue} running={running} shown={steerShown} onSendNow={onQueueSendNow} onToSteer={onQueueToSteer} onCancel={onQueueCancel} onRetry={onQueueRetry} onPause={onQueuePause} />} queued={waiting(queue).length > 0} worktreeTarget={worktreeTarget} onWorktreePhase={setWorktreePhase} port={port} workspace={workspace} fresh={ready && !historyPaging.hasMore && !historyPaging.busy && !historyPaging.failed && !rt.host && s.items.length === 0} status={status} running={running} quote={quote} restore={restored} inject={inserted} focus={askFocus} onSubmit={submit} onChanged={refreshStatus} onError={notify} onSettings={onSettings} side={sideAsk} onSide={() => setSideAsk((on) => !on)} sidePanel={sideAsk ? <SidePanel port={port} onClose={() => setSideAsk(false)} onQuote={(text) => setInserted((was) => ({ n: was.n + 1, text }))} /> : null} changeCount={changeCount} countElsewhere={pill} git={git} onTreeChanged={refreshTree} pulse={pulse} draftKey={draftKey(rt.host ?? "", rt.root, rt.sessionPath || status?.sessionPath || "")} />
         <MeterRail
           tps={tps} trail={trail} running={running} speed={speed} metrics={s.metrics} ctx={ctx} mcp={mcp} compact={compact} cost={cost} turnCost={s.metrics.coverage === "none" ? NO_COST : s.metrics.turn}
