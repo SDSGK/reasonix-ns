@@ -1,45 +1,18 @@
-/* The delegate rail at the top of the conversation: one chip per live
-   sub-agent. Background work never appears here — it stays on the meter
-   rail's own chips. An idle session renders nothing. */
+/* The delegate rail: a compact badge in the window chrome (title breadcrumb
+   row) opens a floating panel over the conversation. Background jobs never
+   appear here — they stay on the meter rail's own chips. The panel renders
+   through a portal at the viewport level (fixed), so it never participates
+   in the pane's layout. */
 
-.agentrail {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  padding: 6px 10px;
-  border-bottom: 1px solid var(--line, #2a2a2e);
-}
 
-.agentrail-chip[data-status="running"]::before {
-  content: "";
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--accent, #4493f8);
-  animation: agentrail-pulse 1.6s ease-in-out infinite;
-}
-
-.agentrail-chip[data-status="settled"]::before {
-  content: "";
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--line, #2a2a2e);
-}
-
-@keyframes agentrail-pulse {
-  50% {
-    opacity: 0.35;
-  }
-}
-
-.agentrail-chip {
+.agentrail-badge {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 3px 10px;
-  border: 1px solid var(--line, #2a2a2e);
+  margin-left: 10px;
+  padding: 2px 8px;
   border-radius: 999px;
+  border: 0;
   background: transparent;
   color: inherit;
   font: inherit;
@@ -47,19 +20,45 @@
   cursor: pointer;
 }
 
-.agentrail-chip:hover {
-  border-color: var(--accent, #4493f8);
+.agentrail-badge:hover {
+  background: var(--hover, #ffffff14);
 }
 
-.agentrail-name {
+.agentrail-badge b {
   font-weight: 600;
-  max-width: 24ch;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
-.agentrail-took {
+.agentrail-live {
+  color: var(--accent, #4493f8);
+  font-weight: 600;
+}
+
+.agentrail-float {
+  position: fixed;
+  top: calc(var(--chrome-h, 45px) + 6px);
+  right: 16px;
+  z-index: 60;
+  width: min(560px, 92%);
+  border: 1px solid color-mix(in srgb, var(--text) 12%, transparent);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: 0 10px 30px #00000040;
+  overflow: hidden;
+}
+
+.agentrail-float .agent-deck {
+  max-height: 46vh;
+  overflow: auto;
+}
+
+.agent-deck-tok,
+.agentrail-float .agent-deck-tok {
   opacity: 0.65;
   font-variant-numeric: tabular-nums;
+  margin-right: 6px;
+}
+
+.agentrail-float .agent-deck-state {
+  font-size: 11px;
 }

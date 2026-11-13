@@ -12,7 +12,7 @@ function rail(cost: CurrencyAmount[], turnCost?: CurrencyAmount[]) {
     <MeterRail
       tps={0} trail={[]} running={false} speed={{ output: 0, modelSeconds: 0, average: 0, firstToken: 0 }}
       metrics={{ hit: 0, miss: 0 }} ctx={null} mcp={[]} compact={{ phase: "idle" } as never} cost={cost} turnCost={turnCost} wallet={{} as never}
-      hideAmounts={false} tasks={[]} jobs={[]} onSettings={vi.fn()} onCancelJob={vi.fn(async () => {})}
+      hideAmounts={false} jobs={[]} onSettings={vi.fn()} onCancelJob={vi.fn(async () => {})}
     />,
   );
 }

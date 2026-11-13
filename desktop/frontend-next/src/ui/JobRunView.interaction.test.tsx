@@ -49,7 +49,7 @@ describe("a background job's workbench tab", () => {
 describe("opening a job's output", () => {
   it("opens it in the workbench rather than over the conversation when the pane can", () => {
     const onOpenJob = vi.fn();
-    const box = render(<DeckChips tasks={[]} jobs={[running]} open="jobs" onOpen={vi.fn()} onReadJob={vi.fn()} onOpenJob={onOpenJob} />).container;
+    const box = render(<DeckChips jobs={[running]} open="jobs" onOpen={vi.fn()} onReadJob={vi.fn()} onOpenJob={onOpenJob} />).container;
     (box.querySelector('[data-action="job.view"]') as HTMLButtonElement).click();
     expect(onOpenJob).toHaveBeenCalledWith(running);
     expect(document.querySelector(".agent-tx")).toBeNull();

@@ -1,12 +1,10 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import "./testkit";
 import { AgentRunView } from "./AgentRunView";
-import { DeckChips } from "./DeckChips";
 import type { AgentPort, HistoryMessage } from "../port/port";
 import type { SubagentRun, SubagentTranscript } from "../port/subagent";
-import type { Task } from "./panels/Agents";
 
 afterEach(() => {
   cleanup();
@@ -82,34 +80,6 @@ describe("a sub-agent run read from the kernel's record", () => {
     const { port } = reader([page([say("x", 1)], 0)]);
     render(<AgentRunView port={port} run={{ ref: "sa_1", name: "audit" }} shown={false} />);
     expect(port.subagentTranscript).not.toHaveBeenCalled();
-  });
-});
-
-const task = (id: string, call: string): Task =>
-  ({ t: "tool", id, running: false, children: [], tool: { id: call, name: "task", args: '{"subagent_type":"Explore"}', profile: { name: "audit", count: 1 } } }) as unknown as Task;
-
-describe("opening a sub-agent from the deck", () => {
-  const open = async (onOpenRun: (call: string) => Promise<boolean>) => {
-    render(<DeckChips tasks={[task("t1", "call_1")]} jobs={[]} open="agents" onOpen={vi.fn()} onOpenRun={onOpenRun} />);
-    await act(async () => { fireEvent.click(document.querySelector('[data-action="agent.open"]')!); });
-  };
-
-  it("opens the run beside the conversation, by the call that spawned it, and keeps the dialog shut", async () => {
-    const onOpenRun = vi.fn(async () => true);
-    await open(onOpenRun);
-    expect(onOpenRun).toHaveBeenCalledWith("call_1");
-    expect(document.querySelector(".agent-tx")).toBeNull();
-  });
-
-  it("falls back to the full-record dialog when the call has no run to read", async () => {
-    await open(vi.fn(async () => false));
-    await waitFor(() => expect(document.querySelector(".agent-tx")).not.toBeNull());
-  });
-
-  it("falls back to the dialog when the window has no way to open a run", async () => {
-    render(<DeckChips tasks={[task("t1", "call_1")]} jobs={[]} open="agents" onOpen={vi.fn()} />);
-    await act(async () => { fireEvent.click(document.querySelector('[data-action="agent.open"]')!); });
-    await waitFor(() => expect(document.querySelector(".agent-tx")).not.toBeNull());
   });
 });
 

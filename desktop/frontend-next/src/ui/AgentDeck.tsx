@@ -1,5 +1,6 @@
 import { t } from "../i18n";
-import { elapsed } from "../i18n/format";
+import { elapsed, tokens } from "../i18n/format";
+import { argOf } from "./args";
 import { delegateStatus, delegateStatusLabel, type DelegateStatus } from "./delegation";
 import { agentsIn } from "./panels/derive";
 import type { Task } from "./panels/Agents";
@@ -31,10 +32,16 @@ export function AgentDeck({ tasks, onOpen, onStop }: { tasks: Task[]; onOpen: (t
 
 function DeckRow({ task, status, onOpen }: { task: Task; status: DelegateStatus; onOpen: (taskId: string) => void }) {
   const watched = useWatched(status === "running");
-  const name = nameOf(task);
+  const raw = nameOf(task);
+  // Older journals name the dispatch plainly ("task"); the prompt it carried
+  // is the readable title a person recognises.
+  const prompt = raw === "task" ? argOf(task.tool.args, "prompt", "task", "description") : "";
+  const name = !raw || raw === "task" ? (prompt ? prompt.slice(0, 32) : raw) : raw;
   const took = task.tool.durationMs ? elapsed(task.tool.durationMs) : "";
-  const reading = status === "running" ? [t("subagent.step", { n: Math.max(task.children.length, 1) }), watched ? elapsed(watched) : ""]
-    : [delegateStatusLabel(status), took];
+  const tok = task.tool.contextTokens;
+  const reading = status === "running"
+    ? [t("subagent.step", { n: Math.max(task.children.length, 1) }), watched ? elapsed(watched) : ""]
+    : [delegateStatusLabel(status), tok != null ? `${tokens(tok)} tok` : "", took];
   return (
     <button type="button" className="ag agent-deck-row" data-status={status} data-action="agent.open" data-target={task.id}
       aria-label={t("subagent.deck.open_full", { name })} title={status === "failed" ? task.tool.err : undefined} onClick={() => onOpen(task.id)}>
@@ -45,6 +52,7 @@ function DeckRow({ task, status, onOpen }: { task: Task; status: DelegateStatus;
       </span>
       <span className="agent-deck-state">
         {status === "running" && <RMark className="plan-spin" />}
+        {tok != null && status !== "running" && <span className="agent-deck-tok">{tokens(tok)} tok</span>}
         {reading.filter(Boolean).join(" · ")}
       </span>
       <StudioIcon name="chevron" className="agent-deck-go" />

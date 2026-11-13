@@ -79,8 +79,9 @@ import { loadChangedFilesPref, useShowsChangedFiles } from "../state/changedfile
 import { loadFoldWorkPref, useFoldsTurnWork } from "../state/foldwork";
 import { ChangedFilesPill } from "./ChangedFilesPill";
 import { TurnDeliveries } from "./TurnDeliveries";
-import { AgentRailBar } from "./AgentRailBar";
 import { useSubagentNotices } from "./useSubagentNotices";
+import { AgentDeck } from "./AgentDeck";
+import { agentsIn } from "./panels/derive";
 import { RootMissingBanner } from "./RootMissingBanner";
 import { useConversationFiles } from "./useConversationFiles";
 import { NewAnswerAnchor } from "./NewAnswerLine";
@@ -333,6 +334,37 @@ function PaneView({ port, hub, rt, title, active, visible, sideHost, side, onFoc
   const paired = useMemo(() => pairCheckpoints(s.items, checkpoints), [s.revision, checkpoints]);
   const rail = useMemo(() => railOf(s.items, s.executions, s.subagentPhase), [s.revision, s.executions, s.subagentPhase]);
   useSubagentNotices(rail.tasks);
+  const [agentDeckOpen, setAgentDeckOpen] = useState(false);
+  const agentFloatBox = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (rail.tasks.length === 0) return;
+    window.dispatchEvent(new CustomEvent("studio:agents-rail", { detail: { live: rail.tasks.filter((x) => x.running).length, total: agentsIn(rail.tasks) } }));
+  }, [rail.tasks]);
+  useEffect(() => {
+    const toggle = () => setAgentDeckOpen((on) => !on);
+    window.addEventListener("studio:agents-rail-open", toggle);
+    return () => window.removeEventListener("studio:agents-rail-open", toggle);
+  }, []);
+  useEffect(() => {
+    if (!agentDeckOpen) return;
+    const away = (e: MouseEvent) => {
+      const t = e.target as Element | null;
+      if (agentFloatBox.current?.contains(t)) return;
+      if (t?.closest?.('[data-action="agentrail.badge"]')) return; // the badge toggles it
+      setAgentDeckOpen(false);
+    };
+    const esc = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      e.stopPropagation();
+      setAgentDeckOpen(false);
+    };
+    document.addEventListener("mousedown", away);
+    document.addEventListener("keydown", esc);
+    return () => {
+      document.removeEventListener("mousedown", away);
+      document.removeEventListener("keydown", esc);
+    };
+  }, [agentDeckOpen]);
 
   const [clearedJobs, setClearedJobs] = useState<ReadonlySet<string>>(() => new Set());
   const jobs = useMemo(() => {
@@ -534,7 +566,15 @@ function PaneView({ port, hub, rt, title, active, visible, sideHost, side, onFoc
       <div className="pviews">
       <div className="worktree-stage-host" ref={setWorktreeTarget} hidden={tab !== "flow" || !worktreePhase}/>
 
-      <AgentRailBar tasks={rail.tasks} onOpen={(taskId) => { const call = rail.tasks.find((x) => x.id === taskId)?.tool.id; if (call) void openRun(call).catch(notify); }} />
+      {agentDeckOpen && rail.tasks.length > 0 && createPortal(
+        <div className="agentrail-float" ref={agentFloatBox}>
+          <AgentDeck
+            tasks={rail.tasks}
+            onOpen={(taskId) => { const call = rail.tasks.find((x) => x.id === taskId)?.tool.id; if (call) void openRun(call).catch(notify); }}
+          />
+        </div>,
+        document.body,
+      )}
       <PaneShown.Provider value={shown}>
       <LiveWork.Provider value={live}>
       <NewAnswerAnchor.Provider value={marker ? newAnswerAt : null}>
@@ -676,11 +716,10 @@ function PaneView({ port, hub, rt, title, active, visible, sideHost, side, onFoc
         <Composer queueStrip={<Queue queue={queue} running={running} shown={steerShown} onSendNow={onQueueSendNow} onToSteer={onQueueToSteer} onCancel={onQueueCancel} onRetry={onQueueRetry} onPause={onQueuePause} />} queued={waiting(queue).length > 0} worktreeTarget={worktreeTarget} onWorktreePhase={setWorktreePhase} port={port} workspace={workspace} fresh={ready && !historyPaging.hasMore && !historyPaging.busy && !historyPaging.failed && !rt.host && s.items.length === 0} status={status} running={running} quote={quote} restore={restored} inject={inserted} focus={askFocus} onSubmit={submit} onChanged={refreshStatus} onError={notify} onSettings={onSettings} side={sideAsk} onSide={() => setSideAsk((on) => !on)} sidePanel={sideAsk ? <SidePanel port={port} onClose={() => setSideAsk(false)} onQuote={(text) => setInserted((was) => ({ n: was.n + 1, text }))} /> : null} changeCount={changeCount} countElsewhere={pill} git={git} onTreeChanged={refreshTree} pulse={pulse} draftKey={draftKey(rt.host ?? "", rt.root, rt.sessionPath || status?.sessionPath || "")} />
         <MeterRail
           tps={tps} trail={trail} running={running} speed={speed} metrics={s.metrics} ctx={ctx} mcp={mcp} compact={compact} cost={cost} turnCost={s.metrics.coverage === "none" ? NO_COST : s.metrics.turn}
-          wallet={wallet} hideAmounts={hideAmounts} tasks={rail.tasks} jobs={jobs} onSettings={onSettings}
+          wallet={wallet} hideAmounts={hideAmounts} jobs={jobs} onSettings={onSettings}
           onCancelJob={(id) => cancelJob(port, id, notify, refreshStatus).then(() => {})}
           onReadJob={readJob}
           onReadProcesses={readProcesses}
-          onOpenRun={openRun} onStopCall={(id) => void port.stopToolCall(id).catch(notify)}
           onClearJobs={(ids) => setClearedJobs((was) => new Set([...was, ...ids]))}
           onOpenJob={jobsLive.open}
           usage={status?.sessionUsage} quote={status?.sessionCostQuote} tariff={status?.tariff} onTariffFlip={refreshStatus}

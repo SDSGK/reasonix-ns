@@ -10,7 +10,7 @@ const rail = (used: number) => render(
   <MeterRail
     tps={0} trail={[]} running={false} speed={{ output: 0, modelSeconds: 0, average: 0, firstToken: 0 }}
     metrics={{ hit: 0, miss: 0 }} ctx={{ used, window: 100, items: [] } as never} mcp={[]} compact={{ phase: "idle" } as never} cost={[]} wallet={{} as never}
-    hideAmounts={false} tasks={[]} jobs={[]} onSettings={vi.fn()} onCancelJob={vi.fn(async () => {})}
+    hideAmounts={false} jobs={[]} onSettings={vi.fn()} onCancelJob={vi.fn(async () => {})}
   />,
 );
 const level = (c: HTMLElement) => c.querySelector(".studio-meter-context")?.getAttribute("data-level");

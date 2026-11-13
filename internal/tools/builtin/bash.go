@@ -269,6 +269,49 @@ func (b bash) ExecuteDetailed(ctx context.Context, args json.RawMessage) (tool.D
 		}, nil
 	}
 
+	// Foreground calls run through the job manager when one is attached: the
+	// command starts as a job and this call waits on it for a short window.
+	// Inside the window it returns exactly like a direct foreground run; past
+	// it the call hands back the job id and the command keeps running in the
+	// background, with its completion folded into a later turn. Without a
+	// manager the direct foreground path runs unchanged.
+	if jm, jok := jobs.FromContext(ctx); jok {
+		const syncWindow = 5 * time.Second
+		jobLease := lease
+		releaseLease = false
+		var runOut string
+		var runEx *tool.ShellExecution
+		var runErr error
+		job := jm.StartForSession(jobs.SessionFromContext(ctx), "bash", commandPreview(p.Command), func(jobCtx context.Context, out io.Writer) (string, error) {
+			if jobLease != nil {
+				defer jobLease.Release()
+			}
+			var childEx *tool.ShellExecution
+			runOut, childEx, runErr = b.runForegroundDetailed(jobCtx, p, sh, argv, wrapped, cmdEnv, probe)
+			if childEx != nil {
+				runEx = childEx
+			}
+			fmt.Fprint(out, runOut)
+			return "", runErr
+		}, jobs.WithPresentation(p.Description, p.Command))
+		select {
+		case <-job.Done():
+			// Settled inside the window: return exactly like a direct
+			// foreground run — the model cannot tell the difference.
+			mergeRunInto(ex, runEx)
+			ex.DurationMs = time.Since(start).Milliseconds()
+			return tool.DetailedResult{Output: runOut, Execution: ex}, runErr
+		case <-time.After(syncWindow):
+			// Still running past the window: hand back the job id, keep the
+			// command alive, and let its completion arrive on its own.
+			ex.DurationMs = time.Since(start).Milliseconds()
+			ex.State, ex.JobID = tool.ShellStateBackgroundStarted, job.ID
+			msg := fmt.Sprintf("Started background job %q (auto-promoted to the background after %s). It keeps running; read new output with bash_output(job_id=%q), wait for it with wait, or stop it with kill_shell(job_id=%q). Its completion is reported on its own.", job.ID, syncWindow, job.ID, job.ID)
+			msg += resumeNote(ctx, jm)
+			return tool.DetailedResult{Output: appendSessionDataHint(msg, b.guard.CommandHint(b.workDir, p.Command)), Execution: ex}, nil
+		}
+	}
+
 	out, runEx, err := b.runForegroundDetailed(ctx, p, sh, argv, wrapped, cmdEnv, probe)
 	mergeRunInto(ex, runEx)
 	ex.DurationMs = time.Since(start).Milliseconds()

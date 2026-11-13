@@ -56,6 +56,15 @@ export function Chrome({ port, status, workspace: ws, title, steer, account, hos
   // so the mark stays disabled there. The kernel is still the one that
   // answers where the folder lives.
   const canOpenProject = !!hub && root !== "" && !host && hostBridge().opensFolders();
+  const [agentsRail, setAgentsRail] = useState<{ live: number; total: number } | null>(null);
+  useEffect(() => {
+    const onRail = (e: Event) => {
+      const detail = (e as CustomEvent<{ live: number; total: number }>).detail;
+      if (detail && detail.total > 0) setAgentsRail(detail);
+    };
+    window.addEventListener("studio:agents-rail", onRail);
+    return () => window.removeEventListener("studio:agents-rail", onRail);
+  }, []);
   const openProject = () => {
     if (hub && root) void hub.openWorkspace(root).catch((e) => onError?.(e));
   };
@@ -108,6 +117,19 @@ export function Chrome({ port, status, workspace: ws, title, steer, account, hos
           <span className="crumbsep">/</span>
         </span>
         <b title={status?.sessionPath}>{sessionName(title, status?.sessionPath)}</b>
+        {agentsRail && agentsRail.total > 0 && (
+          <button
+            type="button"
+            className="agentrail-badge"
+            data-action="agentrail.badge"
+            title="查看本会话的子智能体"
+            onClick={() => window.dispatchEvent(new CustomEvent("studio:agents-rail-open"))}
+          >
+            <span aria-hidden="true">⏱</span>
+            <b>{agentsRail.total} 个子智能体</b>
+            {agentsRail.live > 0 && <span className="agentrail-live">{agentsRail.live} 运行中</span>}
+          </button>
+        )}
         {phone && device && (
           <span className="crumb-sub" data-state={!reachable ? "down" : status?.running ? "run" : "ok"}>
             <i aria-hidden="true" />

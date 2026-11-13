@@ -31,7 +31,7 @@ function rail(over: { usage?: SessionUsage; quote?: CostQuote; hideAmounts?: boo
     <MeterRail
       tps={0} trail={[]} running={false} speed={{ output: 0, modelSeconds: 0, average: 0, firstToken: 0 }}
       metrics={{ hit: 0, miss: 0 }} ctx={"ctx" in over ? (over.ctx ?? null) : context} mcp={[]} compact={{ phase: "idle" } as never} cost={[]} wallet={{} as never}
-      hideAmounts={over.hideAmounts ?? false} tasks={[]} jobs={[]} onSettings={vi.fn()} onCancelJob={vi.fn(async () => {})}
+      hideAmounts={over.hideAmounts ?? false} jobs={[]} onSettings={vi.fn()} onCancelJob={vi.fn(async () => {})}
       usage={"usage" in over ? over.usage : usage} quote={"quote" in over ? over.quote : quote()}
     />,
   );

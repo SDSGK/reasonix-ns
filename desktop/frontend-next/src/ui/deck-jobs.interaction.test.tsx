@@ -19,7 +19,7 @@ function Host({ onCancelJob }: { onCancelJob: (id: string) => Promise<void> }) {
   return (
     <div>
       <p>outside</p>
-      <DeckChips tasks={[]} jobs={JOBS} open={open} onOpen={(next) => setOpen(next)} onCancelJob={onCancelJob} />
+      <DeckChips jobs={JOBS} open={open} onOpen={(next) => setOpen(next)} onCancelJob={onCancelJob} />
     </div>
   );
 }

@@ -20,7 +20,7 @@ const out = (text: string, over: Partial<JobOutput> = {}): JobOutput => ({ text,
 
 function Host({ read, onCancelJob = async () => {} }: { read?: (id: string) => Promise<JobOutput>; onCancelJob?: (id: string) => Promise<void> }) {
   const [open, setOpen] = useState<Deck>("jobs");
-  return <DeckChips tasks={[]} jobs={JOBS} open={open} onOpen={(next) => setOpen(next)} onCancelJob={onCancelJob} onReadJob={read} />;
+  return <DeckChips jobs={JOBS} open={open} onOpen={(next) => setOpen(next)} onCancelJob={onCancelJob} onReadJob={read} />;
 }
 
 const open = () => userEvent.setup({ advanceTimers: vi.advanceTimersByTime }).click(screen.getByRole("button", { name: "查看输出：npm run dev" }));

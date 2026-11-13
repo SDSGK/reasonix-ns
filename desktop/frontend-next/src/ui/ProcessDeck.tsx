@@ -43,10 +43,13 @@ function kindLabel(kind: string): string {
  *  it came rather than guessed at. */
 export function ProcessDeck({ rows, error }: { rows: ProcessEntry[]; error: string }) {
   if (error) return <div className="empty" role="alert">{error}</div>;
-  if (rows.length === 0) return <div className="empty">{t("subagent.process.empty")}</div>;
+  // Delegates live in the top rail's own panel; this deck is background jobs
+  // only, so the two never mix.
+  const jobs = rows.filter((p) => p.kind !== "subagent");
+  if (jobs.length === 0) return <div className="empty">{t("subagent.process.empty")}</div>;
   return (
     <div className="job-deck">
-      {rows.map((p) => (
+      {jobs.map((p) => (
         <div className="job-deck-row" key={p.id} data-status={p.state}>
           <div className="job-deck-line">
             <b className="job-deck-name">{p.name}</b>

@@ -20,7 +20,7 @@ const ROWS: ProcessEntry[] = [
 
 function Host({ read, jobs = JOBS }: { read?: () => Promise<ProcessEntry[]>; jobs?: JobEntry[] }) {
   const [open, setOpen] = useState<Deck>("");
-  return <DeckChips tasks={[]} jobs={jobs} open={open} onOpen={(next) => setOpen(next)} onReadProcesses={read} />;
+  return <DeckChips jobs={jobs} open={open} onOpen={(next) => setOpen(next)} onReadProcesses={read} />;
 }
 
 const chip = () => document.querySelector<HTMLButtonElement>('[data-action="deck.processes"]')!;
@@ -40,9 +40,10 @@ it("shows each process with its state and the cause the kernel gave", async () =
   const dialog = await screen.findByRole("dialog", { name: "进程" });
   expect(dialog.textContent).toContain("npm run build");
   expect(dialog.textContent).toContain("运行中");
-  expect(dialog.textContent).toContain("audit");
-  expect(dialog.textContent).toContain("排队中");
-  expect(dialog.textContent).toContain("等写入名额");
+  // Delegates live in the top rail's own panel; the process deck lists
+  // background jobs only, so a queued sub-agent must not appear here.
+  expect(dialog.textContent).not.toContain("audit");
+  expect(dialog.textContent).not.toContain("排队中");
 });
 
 it("does not poll while open, and reads again when the jobs it was built from change", async () => {
@@ -63,11 +64,14 @@ it("says so when the read fails and keeps no stale rows", async () => {
   const read = vi.fn().mockResolvedValueOnce(ROWS).mockRejectedValueOnce(new HttpError(500, "disk gone", { code: "process.read_failed", params: { detail: "disk gone" } }));
   render(<Host read={read} />);
   await userEvent.click(chip());
-  await screen.findByText("audit");
   await userEvent.click(chip());
   await userEvent.click(chip());
-  await waitFor(() => expect(screen.queryByText("audit")).toBeNull());
-  expect(screen.getByRole("alert").textContent).toContain("读取进程列表失败：disk gone");
+  // The processes deck shows the failure and keeps no stale rows; the jobs
+  // deck beside it still lists its own "npm run build" background job, so the
+  // assertion is scoped to the processes dialog.
+  const dialog = screen.getByRole("dialog", { name: "进程" });
+  expect(dialog.textContent).not.toContain("npm run build");
+  expect(dialog.textContent).toContain("读取进程列表失败：disk gone");
 });
 
 it("offers no process chip where the window cannot read processes", () => {

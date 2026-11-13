@@ -6,6 +6,7 @@ export const EN_COMPOSER: Record<string, string> = {
   "查看 {path} 的改动": "View the diff of {path}",
   "活跃子智能体": "Active subagents",
   "子智能体": "Subagents",
+  "子智能体 · {n} 个": "{n} subagents",
   "子智能体 {name} 已完成": "Sub-agent {name} finished",
   "子智能体 {name} 失败": "Sub-agent {name} failed",
   "子智能体 {name} 未能启动": "Sub-agent {name} did not start",
