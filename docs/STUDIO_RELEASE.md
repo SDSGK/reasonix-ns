@@ -13,7 +13,7 @@ Workflow: `.github/workflows/release-studio.yml`. Trigger: push of a `studio-vX.
 
 | Role | Person | Responsibility |
 | --- | --- | --- |
-| Release owner | @esengine | Decides the version, writes the notes, pushes the tag, verifies, recovers. |
+| Release owner | @SDSGK | Decides the version, writes the notes, pushes the tag, verifies, recovers. |
 | Backup | @SivanCola | Runs this runbook when the release owner is unavailable. |
 
 ## 2. Preconditions
@@ -24,8 +24,23 @@ Workflow: `.github/workflows/release-studio.yml`. Trigger: push of a `studio-vX.
 | P2 | Every job of `CI` and `Studio` succeeded on that commit. A flaky job is rerun, not ignored. | `gh run list --branch studio --commit <sha> --json name,conclusion` |
 | P3 | `release-notes/studio/X.Y.Z.md` is in that commit and passes `make check`. | `git cat-file -e <sha>:release-notes/studio/X.Y.Z.md` |
 | P4 | The version is valid semver and above the latest tag. | `git tag -l 'studio-v*' --sort=-v:refname \| head -1` |
-| P5 | The Windows signing mode is known. `true` signs with Certum and blocks the release if signing fails; anything else ships unsigned and the body says so. | `gh variable list \| grep STUDIO_SIGNING` |
+| P5 | The signing modes are known. `STUDIO_SIGNING_ENABLED=true` signs Windows with Certum and blocks the release if signing fails; `STUDIO_REQUIRE_APPLE_SIGNING=true` fails a release without a Developer ID. Anything else ships unsigned and the body says so. | `gh variable list \| grep STUDIO_SIGNING` |
 | P6 | The DeepSeek Harness market index pins the current `integrations/dsh-plugin`. On failure run `node scripts/dsh-market-index.mjs --pin` and commit the index with the release notes. | `node scripts/dsh-market-index.mjs --check` |
+
+### One-time setup / 一次性准备
+
+A secret cannot live in the repository, so the credentials live in the repository's GitHub settings and are put there by one script:
+
+```bash
+bash scripts/setup-release-secrets.sh
+```
+
+With the GitHub CLI installed and signed in, the script installs the secrets and the variables itself and offers to create the Homebrew tap. Without it, the script prints exactly what to paste into Settings → Secrets and variables → Actions, and where, and the release still starts from a tag you push — the CLI is a convenience here, not a dependency of the release.
+
+Two things it cannot do for you:
+
+- The public key it prints must replace the constant in `internal/platform/update/verify.go` and be committed. The updater verifies every artifact against that key, so a release signed by a different key would not install.
+- The Apple and Certum credentials come from an Apple Developer account and a Certum SimplySign account. Without them the release still publishes: macOS ad-hoc signed, Windows unsigned, and the release body says which.
 
 ## 3. Steps
 
@@ -61,12 +76,12 @@ Jobs in the run:
 | `windows-sign-installer` | One leg per architecture, run one after the other. Requires both packages to hash to the checked values, signs the installer, verifies its signature, and outputs the signed installer's SHA-256. Opens no archive. | shared concurrency group `certum-signing`, environment `studio-release` |
 | `windows-install-smoke` | Runs `scripts/install-smoke.ps1` (the script pull requests run against the unsigned installer) with each architecture's installer on a runner of that architecture: silent per-user install, waits for the files to settle, checks the installed tree (the declared PE set, every image's architecture, the shell's own architecture, the kernel starting) and uninstalls. Holds no secrets and no environment. | `publish` waits for it |
 | `cli` | Builds `reasonix` archives for six OS/arch targets plus `SHA256SUMS`. | fails on a missing archive |
-| `publish` | Renders the notes with their authors, minisigns, writes `latest.json`, creates the GitHub release (a stable tag is GitHub latest only when it is the highest stable `studio-v*` tag; a candidate is a prerelease), mirrors to R2. `latest.json` goes to R2 only, never to the GitHub release. | environment `studio-release`; skipped unless `windows-install-smoke` and all four Windows signing jobs (every leg) succeeded, or signing is off (the smoke still runs); an unresolved `#N` stops it before signing |
-| `website` | Dispatches the `website` branch's Pages workflow after a stable publication, and waits for that deployment. / 正式版发布后触发 `website` 分支的官网工作流，并等待该次部署完成。 | official repository, stable releases only; requested version must appear in the generated changelog / 仅官方仓库正式版；生成的日志必须包含本次发布版本 |
+| `publish` | Renders the notes with their authors, minisigns, writes the manifest, creates the GitHub release (a stable tag is GitHub latest only when it is the highest stable `studio-v*` tag; a candidate is a prerelease), and publishes the catalog as an asset of that release. The catalog is read through `releases/latest/download/studio-versions.json`, so the latest release is the one that answers. | environment `studio-release`; skipped unless `windows-install-smoke` and all four Windows signing jobs (every leg) succeeded, or signing is off (the smoke still runs); an unresolved `#N` stops it before signing |
+| `website` | Dispatches the `website` branch's Pages workflow after a stable publication, and waits for that deployment. / 正式版发布后触发 `website` 分支的官网工作流，并等待该次部署完成。 | `STUDIO_PUBLISH_WEBSITE=true`, and the branch and its `pages.yml` must exist; stable releases only; the requested version must appear in the generated changelog / 需置 `STUDIO_PUBLISH_WEBSITE=true` 且先建好 `website` 分支与 `pages.yml`；仅正式版；生成的日志必须包含本次发布版本 |
 | `cli-gate` | Only with `STUDIO_PUBLISHES_CLI=true`. Requires `CLI_PUBLISH_FROZEN=true`. Checks out nothing and reads no secret. | fails while 1.x is not frozen, and then no other CLI job runs |
 | `cli-tag` | Only with `STUDIO_PUBLISHES_CLI=true`. For a stable or `-preview.N` version, creates the tag `vX.Y.Z` on the studio commit with the release tag identity (`RELEASE_TAG_TOKEN`, see below); an existing tag on that commit is kept, one elsewhere fails. | environment `studio-release`; runs after `publish` and `cli-gate`; checks out nothing, one inline step reads the token |
 | `cli-channels` | Only with `STUDIO_PUBLISHES_CLI=true` (unset today; 1.x owns the channels). Publishes `reasonix` and `@reasonix/cli-*` to npm with `--provenance`, then updates the Homebrew cask (not for a candidate). | no environment and no approval; `id-token: write` on this job only; runs after `publish`, `cli-gate` and `cli-tag` |
-| `cli-pointer` | Only with `STUDIO_PUBLISHES_CLI=true`. Creates the GitHub release `vX.Y.Z` holding the CLI archives, writes `cli/releases/vX.Y.Z/latest.json`, then moves `cli/stable/latest.json` (a `-preview.N` version moves `cli/preview/latest.json`; any other prerelease publishes nothing). | runs after `publish`, `cli-gate` and `cli-tag`; serialized per channel by the `studio-cli-pointer-<channel>` lock |
+| `cli-pointer` | Only with `STUDIO_PUBLISHES_CLI=true`. Creates the GitHub release `vX.Y.Z` holding the CLI archives, then writes the channel pointer to the object-storage mirror and moves it only forward. The updater shipped here reads the GitHub Releases API instead, so it does not depend on that pointer. | runs after `publish`, `cli-gate` and `cli-tag`; serialized per channel by the `studio-cli-pointer-<channel>` lock |
 
 The `studio-release` environment allows the `studio-v*` tag and the `studio` branch. It has no required reviewer.
 
@@ -109,6 +124,8 @@ Verify a published package with `npm view reasonix dist.attestations`: the attes
 
 ### Website changelog / 官网更新日志
 
+This is a deployment of its own: it needs a `website` branch carrying a `pages.yml`, which this repository does not ship. The job is therefore off until `STUDIO_PUBLISH_WEBSITE` is true. Without it a release publishes without a changelog page rather than failing over a site that was never set up.
+
 Every website build synchronizes missing published Studio releases before rendering.
 
 - Notes come verbatim from `release-notes/studio/X.Y.Z.md` at each release tag's commit, independently of the moving `studio` branch.
@@ -130,10 +147,10 @@ Every website build synchronizes missing published Studio releases before render
 | ID | Expected | Command |
 | --- | --- | --- |
 | V1 | The release exists with 25 assets (per-platform packages, `.minisig` files, CLI archives, `SHA256SUMS`; no `latest.json`). A stable tag is not a prerelease and is GitHub latest when it is the highest stable tag; a candidate is a prerelease. | `gh release view studio-vX.Y.Z --json isPrerelease,assets --jq '.isPrerelease, (.assets \| length)'` |
-| V2 | The catalog lists the new version first. | `curl -s https://dl.reasonix.io/studio/versions.json \| jq -r '.versions[0].tag'` |
-| V3 | The manifest is served from the mirror, and, once a Studio release is GitHub latest, the path 1.x updaters fall back to answers 404. | `curl -sI https://dl.reasonix.io/studio-vX.Y.Z/latest.json \| head -1`; `curl -sI https://github.com/esengine/DeepSeek-Reasonix/releases/latest/download/latest.json \| head -1` |
+| V2 | The catalog lists the new version first. | `curl -s https://github.com/SDSGK/reasonix-ns/releases/latest/download/studio-versions.json \| jq -r '.versions[0].tag'` |
+| V3 | The manifest is served from the release, and the path 1.x updaters fall back to answers 404. | `curl -sI https://github.com/SDSGK/reasonix-ns/releases/download/studio-vX.Y.Z/studio-manifest.json \| head -1`; `curl -sI https://github.com/SDSGK/reasonix-ns/releases/latest/download/latest.json \| head -1` |
 | V4 | The body contains the version notes and the standing install text. | `gh release view studio-vX.Y.Z --json body --jq .body` |
-| V5 | The manifest carries both Windows platforms, each resolving to its own installer. | `curl -s https://dl.reasonix.io/studio-vX.Y.Z/latest.json \| jq -r '.platforms["windows-amd64"].url, .platforms["windows-arm64"].url'` |
+| V5 | The manifest carries both Windows platforms, each resolving to its own installer. | `curl -s https://github.com/SDSGK/reasonix-ns/releases/download/studio-vX.Y.Z/studio-manifest.json \| jq -r '.platforms["windows-amd64"].url, .platforms["windows-arm64"].url'` |
 | V6 | The arm64 installer is signed, and every PE image in it is ARM64 except the 32-bit `resources/elevate.exe` and uninstaller. | On Windows: `Get-AuthenticodeSignature ReasonixStudio-windows-arm64-installer.exe`, then `node desktop/electron/packaging/pe.js <unpacked-zip-dir> arm64` over the extracted portable zip. |
 | V7 | `windows-install-smoke` ran both legs and `windows-sign-payload` / `windows-sign-installer` each show an amd64 and an arm64 leg. | `gh run view <run> --json jobs --jq '.jobs[] \| select(.name \| test("Windows\|Certum")) \| "\(.name) \(.conclusion)"'` |
 | V8 | The `website` jobs succeed and the published version has a complete website changelog. / 官网任务成功，发布版本具有完整更新日志。 | Open `https://reasonix.io/changelog/vX.Y.Z/` and check its title, date and source link. / 核对标题、日期及原文链接。 |
@@ -227,15 +244,10 @@ To enable signing:
    gh secret set CERTUM_KEY_ID
    ```
 
-2. Run the smoke test. It signs two probes, publishes nothing, and writes the signer's subject, issuer, thumbprint and timestamp to the job summary:
-
-   ```bash
-   gh workflow run studio-certum-signing-smoke.yml --ref studio
-   ```
+2. Read the signer's subject. The `windows-sign-payload` job records the signer's subject, issuer, thumbprint and timestamp in its job summary, and the same subject is in the certificate's own properties.
 
 3. Copy the subject from that summary, character for character: `gh variable set STUDIO_SIGNING_SUBJECT --body '<subject>'`.
-4. Run the smoke test again. It now fails unless the signer's subject matches.
-5. `gh variable set STUDIO_SIGNING_ENABLED --body true`. From the next release on, the four Windows signing jobs must succeed before `publish` runs, and the body states that Windows is signed. A missing secret or subject fails the release with an error titled `studio-signing.*`.
+4. `gh variable set STUDIO_SIGNING_ENABLED --body true`. From the next release on, the four Windows signing jobs must succeed before `publish` runs, and the body states that Windows is signed. A missing secret or subject fails the release with an error titled `studio-signing.*`.
 
 What is signed:
 
@@ -285,27 +297,31 @@ Studio and 1.x signing jobs and smoke tests share the concurrency group `certum-
 
 | Name | Kind | Used by |
 | --- | --- | --- |
-| `APPLE_CERT_P12`, `APPLE_CERT_PASSWORD`, `APPLE_API_KEY_P8`, `APPLE_API_KEY_ID`, `APPLE_API_ISSUER_ID` | secret | macOS signing and notarization |
-| `CERTUM_USERNAME`, `CERTUM_OTP_URI`, `CERTUM_KEY_ID` | repository secret | Windows Authenticode signing shared with 1.x (section 7) |
+| `MINISIGN_PRIVATE_KEY`, `MINISIGN_PASSWORD` | secret | **required**: the detached signature on every published artifact, verified by the updater against the public key compiled into `internal/platform/update/verify.go`. Without them a release cannot be signed, so it cannot be published |
+| `APPLE_CERT_P12`, `APPLE_CERT_PASSWORD`, `APPLE_API_KEY_P8`, `APPLE_API_KEY_ID`, `APPLE_API_ISSUER_ID` | secret | optional: macOS Developer ID signing and notarization. All five or none. Without them the bundle is ad-hoc signed, the release body says so, and the macOS self-update stays off |
+| `CERTUM_USERNAME`, `CERTUM_OTP_URI`, `CERTUM_KEY_ID` | repository secret | optional: Windows Authenticode signing (section 7), off until `STUDIO_SIGNING_ENABLED` is true |
+| `NPM_TOKEN`, `HOMEBREW_TAP_TOKEN`, `RELEASE_TAG_TOKEN` | repository secret | optional: the CLI channels, off until `STUDIO_PUBLISHES_CLI` is true |
+| `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_ACCOUNT_ID`, `R2_BUCKET` | secret | optional: the object-storage mirror and the delta chunks, off until `STUDIO_PUBLISH_MIRROR` is true |
 | `STUDIO_SIGNING_ENABLED` | variable | Windows signing switch |
+| `STUDIO_REQUIRE_APPLE_SIGNING` | variable | when true, a release without the five Apple credentials fails instead of shipping an ad-hoc signed bundle. Off by default |
 | `STUDIO_PUBLISHES_CLI` | variable | hands the CLI's npm and Homebrew channels to this workflow; set it only in the same step that freezes 1.x with `CLI_PUBLISH_FROZEN` |
-| `NPM_TOKEN`, `HOMEBREW_TAP_TOKEN` | repository secret | `cli-channels` here; shared with 1.x |
+| `STUDIO_PUBLISH_MIRROR` | variable | turns on the object-storage mirror and the delta chunks |
+| `STUDIO_PUBLISH_WEBSITE` | variable | turns on the changelog website deployment, which needs a `website` branch and a `pages.yml` of its own |
 | `STUDIO_SIGNING_SUBJECT` | variable | the signer subject every signed executable must carry; required when signing is on |
-| `MINISIGN_PRIVATE_KEY`, `MINISIGN_PASSWORD` | secret | detached signatures verified by the updater |
-| `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_ACCOUNT_ID`, `R2_BUCKET` | secret | artifact mirror and catalog |
 
-| R2 path | Owner | Content |
+| Address | Owner | Content |
 | --- | --- | --- |
-| `studio/versions.json` | this workflow | Studio catalog, newest first; an entry names its notes object in an optional `notes` field |
-| `studio/notes/X.Y.Z.md` | this workflow | the rendered version notes, immutable; uploaded before the catalog entry that names it |
-| `studio-vX.Y.Z/` | this workflow | artifacts, signatures, `latest.json` |
-| `cli/stable/latest.json`, `cli/preview/latest.json` | `cli-pointer` | what `reasonix upgrade` reads through `crash.reasonix.io/v1/cli/releases/<channel>/latest.json`; only ever moves to a newer version |
-| `cli/releases/vX.Y.Z/latest.json` | `cli-pointer` | immutable record of one CLI release; a rerun with different content fails |
-| `versions.json` | desktop line | never written by this workflow |
+| `releases/latest/download/studio-versions.json` | this workflow | Studio catalog, newest first; an entry names its notes file in an optional `notes` field. The latest release carries the whole list, so a client that rolls back still finds the versions behind it |
+| `releases/download/<tag>/studio-manifest.json` | this workflow | one release's manifest: the assets, their signatures and their digests. It is not named `latest.json`, because that name under a release's download route is the address the 1.x updater falls back to |
+| `releases/download/<tag>/<asset>` | this workflow | artifacts and their `.minisig` signatures |
+| `releases/download/<cli tag>/<asset>` | `cli-pointer` | the CLI archives. `reasonix upgrade` reads the GitHub Releases API and downloads from the tag it names, so the release list is the only directory there is |
+| `raw.githubusercontent.com/<repo>/studio/release-notes/studio/X.Y.Z.md` | this repository | the rendered version notes, immutable; the file the release commit carries |
+
+The optional object-storage mirror (the `STUDIO_PUBLISH_MIRROR` variable) holds the same artifacts under the tag prefix and, when it is configured, the delta chunks. It needs a bucket and a host this repository owns; the GitHub release alone is enough for a client to find and install a version.
 
 ### Platform keys
 
-`latest.json` keys `platforms` (and `deltas`) as `<GOOS>-<GOARCH>`, derived from the artifact name by `studio-manifest` and asked for by the running kernel through `runtime.GOOS` and `runtime.GOARCH`.
+`studio-manifest.json` keys `platforms` (and `deltas`) as `<GOOS>-<GOARCH>`, derived from the artifact name by `studio-manifest` and asked for by the running kernel through `runtime.GOOS` and `runtime.GOARCH`.
 
 - The key is the binary's own architecture, not the machine's. An x64 build running under ARM64 emulation asks for `windows-amd64` and keeps updating to the amd64 installer; it is not moved to a native build.
 - Linux ships a `.deb`, an `.rpm` and an `.AppImage` for each of amd64 and arm64 (aarch64), all named `ReasonixStudio-linux-<arch>.<ext>`; the publish job requires all six by name.
@@ -316,7 +332,7 @@ Studio and 1.x signing jobs and smoke tests share the concurrency group `certum-
 - `native_packages["linux-<arch>"]` is the `.deb` and has to stay that: every installed client hands it to dpkg.
 - The `.rpm` is `native_packages["linux-<arch>-rpm"]`. No shipped client reads it yet, so an `.rpm` install is updated by downloading the new package.
 - The `.rpm` carries no rpm GPG signature, and `dnf install` of a local file does not check one by default.
-- Its integrity rests on HTTPS and the minisign signature beside it. Verify with `minisign -Vm ReasonixStudio-linux-amd64.rpm -P RWSw66n0RsoSr6Zhh6qt5YO95YkpCayTOCMFVDNUQSjJYwxoYngNVBSq`, the key compiled into `internal/platform/update/verify.go`.
+- Its integrity rests on HTTPS and the minisign signature beside it. Verify with `minisign -Vm ReasonixStudio-linux-amd64.rpm -P RWSfDdo29cR8QZyEihBkuCOoMkvgsYMzWWD1CECtLOxoVz8/vo6QTs06`, the key compiled into `internal/platform/update/verify.go`.
 - fpm spells the architecture in an `.rpm` name its own way (`x86_64`, `aarch64`); `desktop/electron/packaging/canonical-artifact-names.js` renames it to the release architecture and fails the build on any spelling left over.
 - When a client tries to install a release whose manifest lacks its key (and, on Linux, a matching `native_packages` key), staging fails with `update.no_package` naming the release page; no other architecture's package is substituted. A missing `deltas` entry means the full package is downloaded.
 

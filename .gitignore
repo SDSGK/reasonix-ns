@@ -96,3 +96,11 @@ scripts/official-theme-art/__pycache__/
 *.exe
 *.exe~
 /relayfake
+
+# The minisign key pair the release setup script generates. The private key is
+# the MINISIGN_PRIVATE_KEY secret and must never reach a commit.
+.minisign/
+
+# The values the release setup script prints for pasting into the repository's
+# settings. It holds the private key and the passwords.
+.release-secrets.txt
