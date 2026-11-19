@@ -673,7 +673,7 @@ jobs:
 
       # The end of the contract: not that the name parses, but that the manifest
       # keys the artifact under the platform this runner actually is. The tool
-      # writes latest.json into the directory and logs to stdout, so the check
+      # writes the manifest into the directory and logs to stdout, so the check
       # reads the file -- captured output would match its own progress line.
       - name: studio-manifest resolves the platform this runner is
         working-directory: desktop
@@ -681,8 +681,8 @@ jobs:
           GITHUB_REPOSITORY: ${{ github.repository }}
         run: |
           go run ./cmd/studio-manifest ../dist v0.0.0-ci v0.0.0-ci
-          cat ../dist/latest.json
-          if ! grep -q '"${{ matrix.platform }}-${{ matrix.arch }}"' ../dist/latest.json; then
+          cat ../dist/studio-manifest.json
+          if ! grep -q '"${{ matrix.platform }}-${{ matrix.arch }}"' ../dist/studio-manifest.json; then
             echo "::error::the manifest has no entry for ${{ matrix.platform }}-${{ matrix.arch }}"
             exit 1
           fi

@@ -16,7 +16,11 @@ import { resolve } from "node:path";
 export const REPO = "SDSGK/reasonix-ns";
 export const DEFAULT_BASE = "";
 export const RECEIPT = /^FB-[0-9A-HJKMNP-TV-Z]{4}-[0-9A-HJKMNP-TV-Z]{4}$/;
-export const ATTACHMENT_PREFIX = `${DEFAULT_BASE}/v1/feedback/attachments/`;
+// ATTACHMENT_PREFIX is the path an attachment URL carries. The service's
+// address is configurable, so the prefix names a path and not an address: a
+// relative URL is the service's own, and an absolute one has to carry the
+// service's base.
+export const ATTACHMENT_PREFIX = "/v1/feedback/attachments/";
 export const CATEGORY_LABEL = { bug: "bug", idea: "enhancement", question: "question", other: null };
 export const SOURCE_LABEL = { name: "from-studio", color: "5319e7", description: "Filed from inside Reasonix Studio" };
 export const BOT_LOGIN = "github-actions[bot]";
@@ -48,15 +52,24 @@ export function renderTitle(body) {
   return `[Studio feedback] ${line.replace(/@/g, `@${ZWSP}`).replace(/#(?=\d)/g, `#${ZWSP}`).replace(/(?<=[A-Za-z])-(?=\d)/g, `-${ZWSP}`)}`;
 }
 
-// An image is linked only when the worker marks it released; anything else is still private.
-export function attachmentUrls(item) {
+// feedbackBase is where the feedback service lives. It is empty when none is
+// configured, and then nothing is sent anywhere.
+export function feedbackBase(env = process.env) {
+  return (env.FEEDBACK_BASE_URL || DEFAULT_BASE).replace(/\/$/, "");
+}
+
+// An image is linked only when the worker marks it released; anything else is
+// still private. The address has to be the service's own: a relative one is,
+// and an absolute one has to carry the service's base.
+export function attachmentUrls(item, base = feedbackBase()) {
   const urls = [];
   for (const a of item.attachments ?? []) {
     if (a?.released !== true) continue;
     const url = a.url;
-    if (typeof url === "string" && url.startsWith(ATTACHMENT_PREFIX) && !/[\s()<>]/.test(url)) {
-      urls.push({ name: a.name || "image", url });
-    }
+    if (typeof url !== "string" || /[\s()<>]/.test(url)) continue;
+    const own = url.startsWith(ATTACHMENT_PREFIX) || (base !== "" && url.startsWith(base + ATTACHMENT_PREFIX));
+    if (!own) continue;
+    urls.push({ name: a.name || "image", url });
   }
   return urls;
 }
@@ -344,7 +357,7 @@ const paginate = (path) => {
 };
 
 export function liveDeps(env) {
-  const base = (env.FEEDBACK_BASE_URL || DEFAULT_BASE).replace(/\/$/, "");
+  const base = feedbackBase(env);
   const cache = {};
   const call = async (method, path, body) => {
     let res;

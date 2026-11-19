@@ -9,7 +9,7 @@ import { fileURLToPath } from "node:url";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const script = path.join(here, "publish-cli-pointer.sh");
-const repo = "esengine/DeepSeek-Reasonix";
+const repo = "SDSGK/reasonix-ns";
 const bucket = "bkt";
 
 const names = [
@@ -357,8 +357,8 @@ const target = args[1];
 fs.appendFileSync(path.join(dir, "api.log"), target + "|" + process.env.GH_TOKEN + "\\n");
 const e = process.env;
 if (args[0] !== "api") { console.error("unexpected gh call"); process.exit(2); }
-if (target === "user") console.log(JSON.stringify({ type: "User", login: e.STUB_LOGIN || "esengine" }));
-else if (target === "repos/esengine/DeepSeek-Reasonix") console.log("true");
+if (target === "user") console.log(JSON.stringify({ type: "User", login: e.STUB_LOGIN || "SDSGK" }));
+else if (target === "repos/SDSGK/reasonix-ns") console.log("true");
 else if (target.includes("/commits/")) console.log(e.STUB_TAG_SHA);
 else if (target.includes("/compare/")) console.log(e.STUB_COMPARE || "behind");
 else if (target.includes("/git/ref/tags/")) {
@@ -392,7 +392,7 @@ function tagJob(extra = {}) {
       RUNNER_TEMP: dir,
       TAG_TOKEN: "tag-token",
       READ_TOKEN: "read-token",
-      RELEASE_TAG_ACTOR: "esengine",
+      RELEASE_TAG_ACTOR: "SDSGK",
       CLI_PUBLISH_FROZEN: "true",
       CLI_VERSION: version,
       STUDIO_TAG: `studio-${version}`,
@@ -412,7 +412,7 @@ test("the tag job creates v<version> on the studio commit and only the identity 
   assert.match(created, /ref=refs\/tags\/v2\.24\.0 -f sha=a{40}/);
   for (const line of api.trim().split("\n")) {
     const [target, token] = line.split("|");
-    const writes = target === "user" || target === "repos/esengine/DeepSeek-Reasonix" || target.endsWith("/git/refs");
+    const writes = target === "user" || target === "repos/SDSGK/reasonix-ns" || target.endsWith("/git/refs");
     assert.equal(token, writes ? "tag-token" : "read-token", target);
   }
   assert.equal(tagJob({ version: "v2.25.0-preview.1" }).result.status, 0);

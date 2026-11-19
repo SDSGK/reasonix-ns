@@ -88,13 +88,15 @@ func TestRunnerContinuesTheSameTranscript(t *testing.T) {
 	if err != nil {
 		t.Fatalf("read the transcript: %v", err)
 	}
-	stored := ""
+	var stored strings.Builder
 	for _, m := range page.Messages {
-		stored += m.Content + "\n"
+		stored.WriteString(m.Content)
+		stored.WriteString("\n")
 	}
+	transcript := stored.String()
 	for _, want := range []string{"first task", "first answer", "follow up", "second answer"} {
-		if !strings.Contains(stored, want) {
-			t.Fatalf("the stored transcript lost %q:\n%s", want, stored)
+		if !strings.Contains(transcript, want) {
+			t.Fatalf("the stored transcript lost %q:\n%s", want, transcript)
 		}
 	}
 }

@@ -12,10 +12,12 @@
   padding: 2px 8px;
   border-radius: var(--r-pill);
   border: 0;
-  background: transparent;
-  /* The crumb row's own colour is not readable on the chrome's own surface, so
-     the badge names its own: the theme's text colour, which the contrast
-     guard checks against whatever sits behind it. */
+  /* The badge names its own surface rather than sitting on the crumb row's:
+     the row's own colour is not readable on whatever the chrome paints behind
+     it, and a transparent badge inherits that surface. The surface and the
+     text are a pair the themes define together, so the contrast holds in
+     every theme. */
+  background: var(--surface);
   color: var(--text);
   font: inherit;
   cursor: pointer;

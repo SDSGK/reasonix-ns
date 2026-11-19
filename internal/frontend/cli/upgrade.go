@@ -30,8 +30,8 @@ import (
 )
 
 const (
-	ghOwner = "SDSGK"
-	ghRepo  = "reasonix-ns"
+	ghOwner                = "SDSGK"
+	ghRepo                 = "reasonix-ns"
 	ghAPIReleases          = "https://api.github.com/repos/" + ghOwner + "/" + ghRepo + "/releases?per_page=100"
 	ghDownloadBase         = "https://github.com/" + ghOwner + "/" + ghRepo + "/releases/download"
 	upgradeTimeout         = 60 * time.Second

@@ -38,7 +38,7 @@ test("withdrawing moves the row out of versions and keeps it, with the reason", 
   assert.equal(out.json.withdrawn[0].version, "v2.36.0");
   assert.equal(out.json.withdrawn[0].reason, "blank window on first launch");
   assert.equal(out.json.withdrawn[0].withdrawnAt, AT);
-  assert.match(out.json.withdrawn[0].manifest, /studio-v2\.36\.0\/latest\.json$/);
+  assert.match(out.json.withdrawn[0].manifest, /studio-v2\.36\.0\/studio-manifest\.json$/);
 });
 
 test("withdrawing an unknown or already withdrawn version is refused", () => {

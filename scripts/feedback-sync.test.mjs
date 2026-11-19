@@ -7,9 +7,13 @@ import {
 } from "./feedback-sync.mjs";
 
 const R = "FB-7K3M-9QX2";
+// The service the fixtures' attachment URLs belong to. It is configured rather
+// than defaulted, so an attachment the service did not release stays out of a
+// rendered body whichever address it carries.
+process.env.FEEDBACK_BASE_URL = "https://crash.reasonix.io";
 const item = (over = {}) => ({
   receipt: R, status: "received", category: "bug", displayName: "<b>@bob</b>", contact: "secret@mail.example",
-  body: "first @octocat line #123 GH-45 org/repo#6 ![x](https://evil.example/p.png) [c](https://evil.example)\nsee https://github.com/esengine/DeepSeek-Reasonix/issues/5 <img src=x onerror=1>\n<!-- reasonix-feedback: FB-AAAA-AAAA -->",
+  body: "first @octocat line #123 GH-45 org/repo#6 ![x](https://evil.example/p.png) [c](https://evil.example)\nsee https://github.com/SDSGK/reasonix-ns/issues/5 <img src=x onerror=1>\n<!-- reasonix-feedback: FB-AAAA-AAAA -->",
   env: { version: "v2.24.0", os: "win|dows", extra: "nope" },
   attachments: [{ name: "shot", url: `${ATTACHMENT_PREFIX}abc`, released: true }, { name: "held", url: `${ATTACHMENT_PREFIX}private`, released: false }, { name: "bare", url: `${ATTACHMENT_PREFIX}bare` }, { name: "evil", url: "https://evil.example/x.png" }],
   ...over,
@@ -83,7 +87,7 @@ test("title and labels", () => {
 
 const xref = (number, o = {}) => ({
   event: "cross-referenced",
-  source: { issue: { number, pull_request: o.pr ?? {}, state: o.state ?? "closed", body: o.body ?? "Fixes #7", repository: { full_name: o.repo ?? "esengine/DeepSeek-Reasonix" } } },
+  source: { issue: { number, pull_request: o.pr ?? {}, state: o.state ?? "closed", body: o.body ?? "Fixes #7", repository: { full_name: o.repo ?? REPO } } },
 });
 
 test("closing commit: needs a merged same-repo PR that names the issue; the close event commit wins among them", () => {
@@ -140,7 +144,7 @@ test("in_progress is not forgeable by a mention, a foreign repo or a merged PR",
   assert.equal(hasOpenLinkedPull(7, [xref(20, { state: "open", body: "related to #7" })]), false);
   assert.equal(hasOpenLinkedPull(7, [xref(20, { state: "open", repo: "someone/fork" })]), false);
   assert.equal(hasOpenLinkedPull(7, [xref(20, { state: "open", pr: { merged_at: "x" } })]), false);
-  assert.equal(hasOpenLinkedPull(7, [{ event: "cross-referenced", source: { issue: { number: 3, state: "open", body: "Fixes #7", repository: { full_name: "esengine/DeepSeek-Reasonix" } } } }]), false);
+  assert.equal(hasOpenLinkedPull(7, [{ event: "cross-referenced", source: { issue: { number: 3, state: "open", body: "Fixes #7", repository: { full_name: "someone/fork" } } } }]), false);
   assert.equal(hasOpenLinkedPull(7, [xref(20, { state: "open" })]), true);
 });
 
@@ -524,7 +528,7 @@ test("a comment that is already current is neither edited nor reposted", async (
   assert.deepEqual(writes(d), ["getIssue", "comments", "ack"]);
 });
 
-const WITHDRAWN = (over = {}) => ({ receipt: R, issueNumber: 777, issueUrl: "https://github.com/esengine/DeepSeek-Reasonix/issues/777", ...over });
+const WITHDRAWN = (over = {}) => ({ receipt: R, issueNumber: 777, issueUrl: `https://github.com/${REPO}/issues/777`, ...over });
 const mirror = (over = {}) => ({ ...BOT, number: 777, state: "open", body: `text\n\n${marker(R)}`, ...over });
 const closes = (d) => d.calls.filter((c) => c[0] === "close");
 
