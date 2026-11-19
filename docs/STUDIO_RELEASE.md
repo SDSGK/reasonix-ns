@@ -35,7 +35,9 @@ A secret cannot live in the repository, so the credentials live in the repositor
 bash scripts/setup-release-secrets.sh
 ```
 
-With the GitHub CLI installed and signed in, the script installs the secrets and the variables itself and offers to create the Homebrew tap. Without it, the script prints exactly what to paste into Settings → Secrets and variables → Actions, and where, and the release still starts from a tag you push — the CLI is a convenience here, not a dependency of the release.
+With the GitHub CLI installed and signed in, the script installs the secrets and the variables itself and offers to create the Homebrew tap.
+
+Without it, the script prints exactly what to paste into Settings → Secrets and variables → Actions, and where. The release still starts from a tag you push: the CLI is a convenience here, not a dependency of the release.
 
 Two things it cannot do for you:
 

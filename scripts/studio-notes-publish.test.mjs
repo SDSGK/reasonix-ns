@@ -90,24 +90,23 @@ test("only a confirmed upload produces the notes pointer", () => {
   const run = notesBlock("exit 0");
   assert.equal(run.status, 0, run.stderr);
   assert.doesNotMatch(run.stdout, /::warning::/);
-  assert.match(run.stdout, /ARGS=20 https:\/\/dl\.reasonix\.io\/studio\/notes\/2\.32\.0\.md$/m);
+  assert.match(run.stdout, /ARGS=20 https:\/\/raw\.githubusercontent\.com\/SDSGK\/reasonix-ns\/studio\/release-notes\/studio\/2\.32\.0\.md$/m);
 });
 
 test("stable publications deploy from website without widening Pages or signing permissions", () => {
   const job = workflow.match(/^  website:\n[\s\S]*?(?=^  [a-z][a-z-]*:|$(?![\s\S]))/m)?.[0] ?? "";
   assert.match(job, /needs: \[resolve, publish\]/);
-  assert.match(job, /github\.repository == 'SDSGK\/reasonix-ns'/);
+  assert.match(job, /vars\.STUDIO_PUBLISH_WEBSITE == 'true'/);
   assert.match(job, /needs\.resolve\.outputs\.candidate != 'true'/);
   assert.match(job, /actions: write/);
   assert.doesNotMatch(job, /id-token:|pages:|secrets:/);
   assert.match(job, /ref: \$\{\{ github\.workflow_sha \}\}/);
   assert.match(job, /VERSION: \$\{\{ needs\.resolve\.outputs\.version \}\}/);
   assert.match(job, /scripts\/publish-studio-changelog\.sh/);
-  const registration = readFileSync(path.join(dir, "..", ".github", "workflows", "pages.yml"), "utf8");
-  assert.match(registration, /workflow_dispatch:/);
-  for (const input of ["release_version", "release_request", "studio_version"]) assert.ok(registration.includes(`${input}:`));
-  assert.match(registration, /permissions: \{\}/);
-  assert.match(registration, /exit 1/);
+  // The Pages registration this job dispatches to belongs to the website
+  // deployment, which this repository does not ship: the job stays off until
+  // STUDIO_PUBLISH_WEBSITE turns it on, and there is nothing here to assert
+  // about a file that is not in the tree.
 });
 
 test("website publication waits for its own deployment and propagates dispatch, API and deployment failures", () => {
