@@ -8,7 +8,7 @@ body:
       value: |
         Thanks for filing a bug. Pick which version line you're on below — it gets
         labeled automatically, no maintainer action needed. Not sure which line
-        you run? See the [version roadmap](https://github.com/esengine/DeepSeek-Reasonix/discussions/10748).
+        you run? See the [version roadmap](https://github.com/SDSGK/reasonix-ns/discussions/10748).
   - type: dropdown
     id: version-line
     attributes:

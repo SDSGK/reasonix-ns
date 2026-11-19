@@ -3,8 +3,6 @@ package cli
 import (
 	"encoding/json"
 	"fmt"
-	"net/http"
-	"net/http/httptest"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -112,23 +110,22 @@ func TestStudioTagShapesTheV1395UpdaterRefuses(t *testing.T) {
 	}
 }
 
-func TestCurrentUpdaterReadsTheStudioPointer(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		_, _ = w.Write(loadStudioPointer(t))
-	}))
-	defer server.Close()
-	rel, err := fetchCLIReleasePointer(server.Client(), server.URL, cliReleaseStable)
-	if err != nil {
+// The current updater reads a release's metadata from the GitHub Releases API.
+// The shape it has to make sense of is the one the published pointer carried,
+// so the same fixture stands in for what the API answers.
+func TestCurrentUpdaterReadsAStudioRelease(t *testing.T) {
+	var rel ghRelease
+	if err := json.Unmarshal(loadStudioPointer(t), &rel); err != nil {
 		t.Fatal(err)
 	}
 	for _, target := range [][2]string{
 		{"darwin", "amd64"}, {"darwin", "arm64"}, {"linux", "amd64"}, {"linux", "arm64"}, {"windows", "amd64"}, {"windows", "arm64"},
 	} {
-		if findCLIPlatformAsset(rel, target[0], target[1]) == nil {
+		if findCLIPlatformAsset(&rel, target[0], target[1]) == nil {
 			t.Errorf("no asset for %s/%s", target[0], target[1])
 		}
 	}
-	if findCLIReleaseAsset(rel, "SHA256SUMS") == nil {
+	if findCLIReleaseAsset(&rel, "SHA256SUMS") == nil {
 		t.Error("no SHA256SUMS")
 	}
 }

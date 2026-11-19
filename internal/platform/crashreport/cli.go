@@ -39,7 +39,10 @@ const (
 	maxFieldBytes        = 4 << 10
 )
 
-var reportEndpoint = "https://crash.reasonix.io/v1/report"
+// reportEndpoint is where a crash report is uploaded. Crash reports are
+// retired by default, and this address is only read if the service is turned
+// back on: REASONIX_CRASH_REPORT_URL points it at a service of your own.
+var reportEndpoint = strings.TrimSpace(os.Getenv("REASONIX_CRASH_REPORT_URL"))
 
 // reportsRetired is the end of service; tests of the sender lift it.
 var reportsRetired = true

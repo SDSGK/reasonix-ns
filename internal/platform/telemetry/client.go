@@ -21,7 +21,10 @@ import (
 	"reasonix/internal/contract/surface"
 )
 
-var endpoint = "https://crash.reasonix.io/v1"
+// endpoint is where telemetry is reported. It is empty when this project
+// provides no telemetry service, and then nothing is reported at all:
+// REASONIX_TELEMETRY_URL points it at a service of your own.
+var endpoint = strings.TrimSpace(os.Getenv("REASONIX_TELEMETRY_URL"))
 
 var uploadSignals = map[string]bool{
 	"finish_reason": true, "empty_final": true, "provider_error": true,
@@ -338,6 +341,11 @@ func validCounter(c Counter) bool {
 }
 
 func (c *Client) post(ctx context.Context, path string, payload any) error {
+	if endpoint == "" {
+		// No telemetry service is configured, so there is nowhere to report
+		// to and nothing leaves this machine.
+		return nil
+	}
 	b, err := json.Marshal(payload)
 	if err != nil {
 		return err

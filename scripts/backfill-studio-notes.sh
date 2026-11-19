@@ -25,7 +25,10 @@ repo="${BACKFILL_REPO:-$(cd "$here/.." && pwd)}"
 endpoint="https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com"
 work="$(mktemp -d)"
 trap 'rm -rf "$work"' EXIT
-base="https://dl.reasonix.io/studio/notes"
+base="https://raw.githubusercontent.com/SDSGK/reasonix-ns/studio/release-notes/studio"
+# The catalog this script maintains lives on the optional object-storage mirror;
+# the published catalog is the one this repository's releases carry. It runs
+# only against a bucket and a host this repository owns.
 
 idle() {
   local busy

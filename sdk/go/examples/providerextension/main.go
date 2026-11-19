@@ -6,7 +6,7 @@ import (
 	"os"
 	"strings"
 
-	extension "github.com/esengine/DeepSeek-Reasonix/sdk/go"
+	extension "github.com/SDSGK/reasonix-ns/sdk/go"
 )
 
 type echoProvider struct{ id string }

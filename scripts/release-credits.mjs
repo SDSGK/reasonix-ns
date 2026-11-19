@@ -6,7 +6,7 @@
 import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 
-export const defaultRepository = "esengine/DeepSeek-Reasonix";
+export const defaultRepository = "SDSGK/reasonix-ns";
 
 export const CreditErrorCode = Object.freeze({
   noToken: "release_credits.no_token",

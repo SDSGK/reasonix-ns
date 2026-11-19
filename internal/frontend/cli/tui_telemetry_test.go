@@ -48,8 +48,11 @@ func TestTUIFirstRunAsksBeforeAnyTelemetryStarts(t *testing.T) {
 	if got.savedAtRun != "auto" {
 		t.Fatalf("telemetry started with saved mode %q, before the answer was stored", got.savedAtRun)
 	}
-	if !strings.Contains(out.String(), "[Y/n]") || !strings.Contains(out.String(), "crash.reasonix.io") {
+	if !strings.Contains(out.String(), "[Y/n]") {
 		t.Fatalf("prompt = %q", out.String())
+	}
+	if strings.Contains(out.String(), "crash.reasonix.io") {
+		t.Fatalf("prompt names a service this project does not provide: %q", out.String())
 	}
 	o := got.opts
 	if !o.Interactive || o.CLIMode != "tui" || o.Version != "v2.31.0" || o.Profile != "balanced" || o.PermissionMode != "auto" || o.SessionMode != "fresh" {

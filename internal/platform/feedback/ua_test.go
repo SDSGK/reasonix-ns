@@ -15,7 +15,7 @@ func TestFeedbackRequestsCarryTheClientIdentity(t *testing.T) {
 		_, _ = w.Write([]byte("{}"))
 	}))
 	defer srv.Close()
-	s := &Service{http: srv.Client()}
+	s := &Service{base: srv.URL, http: srv.Client()}
 	req, err := http.NewRequest(http.MethodGet, srv.URL, nil)
 	if err != nil {
 		t.Fatal(err)

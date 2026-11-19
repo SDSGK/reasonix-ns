@@ -13,8 +13,8 @@ import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { resolve } from "node:path";
 
-export const REPO = "esengine/DeepSeek-Reasonix";
-export const DEFAULT_BASE = "https://crash.reasonix.io";
+export const REPO = "SDSGK/reasonix-ns";
+export const DEFAULT_BASE = "";
 export const RECEIPT = /^FB-[0-9A-HJKMNP-TV-Z]{4}-[0-9A-HJKMNP-TV-Z]{4}$/;
 export const ATTACHMENT_PREFIX = `${DEFAULT_BASE}/v1/feedback/attachments/`;
 export const CATEGORY_LABEL = { bug: "bug", idea: "enhancement", question: "question", other: null };

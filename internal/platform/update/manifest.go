@@ -31,11 +31,25 @@ type Delta struct {
 	Chunks string `json:"chunks"` // base URL; a chunk is Chunks + "/" + delta.ObjectName(hash)
 }
 
-// StudioMirror is the release mirror Studio's catalog and deltas live on.
-const StudioMirror = "https://dl.reasonix.io"
+// StudioRepo is the GitHub repository this product line publishes from.
+// Every address below is built from it, so the line cannot answer for another
+// repository's releases.
+const StudioRepo = "SDSGK/reasonix-ns"
+
+// StudioMirror is where Studio's artifacts, manifests and delta chunks live:
+// the download root of this repository's releases. Publishing a release there
+// is what makes it installable, and no other host answers for this product
+// line.
+const StudioMirror = "https://github.com/" + StudioRepo + "/releases/download"
 
 // StudioChunks is the one chunk store every Studio release shares.
 const StudioChunks = StudioMirror + "/studio/chunks"
+
+// StudioNotesBase is where a published release's notes live: the notes file
+// the release commit carries, read from the branch that carries it. It is built
+// from a validated version and this constant, never from the catalog, so a
+// catalog that was tampered with cannot aim a fetch anywhere.
+const StudioNotesBase = "https://raw.githubusercontent.com/" + StudioRepo + "/studio/release-notes/studio"
 
 // DeltaIndexName is a platform's index file inside a release's delta directory.
 const DeltaIndexName = "index.json.zst"

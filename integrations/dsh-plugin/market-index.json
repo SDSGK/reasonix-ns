@@ -45,7 +45,7 @@
           "publishTimestamp": 1792315829,
           "source": {
             "type": "git",
-            "url": "https://github.com/esengine/DeepSeek-Reasonix",
+            "url": "https://github.com/SDSGK/reasonix-ns",
             "commit": "79430cf8cf978505a2a8f433e4dc29a6def5e3cf",
             "path": "integrations/dsh-plugin"
           },

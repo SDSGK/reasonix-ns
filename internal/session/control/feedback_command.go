@@ -27,7 +27,7 @@ const feedbackUsage = `usage:
   /feedback board join <name> [--yes] | leave | me    choose to be listed on it, or leave it
   /feedback name <nickname>                            set the nickname reports go out under`
 
-const feedbackPublicNotice = "Your text and nickname become PUBLIC on GitHub (esengine/DeepSeek-Reasonix) only if we file your report as an issue; otherwise they stay private. You will get a receipt and, if it is filed, the link; we may also reply or ask questions here (/feedback list). Do not include secrets or private code. Security problems belong in SECURITY.md, not here."
+const feedbackPublicNotice = "Your text and nickname become PUBLIC on GitHub (SDSGK/reasonix-ns) only if we file your report as an issue; otherwise they stay private. You will get a receipt and, if it is filed, the link; we may also reply or ask questions here (/feedback list). Do not include secrets or private code. Security problems belong in SECURITY.md, not here."
 
 func feedbackArgItems(prior []string) []SlashItem {
 	if len(prior) > 1 {

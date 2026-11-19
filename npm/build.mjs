@@ -76,7 +76,7 @@ for (const t of TARGETS) {
         license: "MIT",
         repository: {
           type: "git",
-          url: "git+https://github.com/esengine/DeepSeek-Reasonix.git",
+          url: "git+https://github.com/SDSGK/reasonix-ns.git",
         },
         reasonixCandidateSha: candidateSha,
       },

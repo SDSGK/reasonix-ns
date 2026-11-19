@@ -1,14 +1,13 @@
 name: CI
 
-# studio is a parallel release line, not a feature branch: it carries the
-# kernel changes Studio is built on, so it needs the same kernel gates main-v2
-# has. Studio's own surface (desktop/next, desktop/frontend-next) exists only
-# there and is covered by studio.yml.
+# studio is the only release line this fork maintains. Studio's own surface
+# (desktop/next, desktop/frontend-next) exists only here and is covered by
+# studio.yml.
 on:
   push:
-    branches: [main-v2, studio]
+    branches: [studio]
   pull_request:
-    branches: [main-v2, studio]
+    branches: [studio]
 
 permissions:
   contents: read
@@ -26,7 +25,7 @@ jobs:
   # merges. Gated jobs skip only on an explicit `false` output: wrapped in
   # `always()`, a failed `changes` job (or a missing output) makes them run
   # the full matrix instead of silently passing required checks as skipped.
-  # Pushes to main-v2 always run everything. Pull requests run the macOS and
+  # Pushes to the release line always run everything. Pull requests run the macOS and
   # Windows legs only when `platform` is not 'false'; the rule lives in
   # scripts/ci-platform-scope.sh and fails toward running them.
   changes:
@@ -806,7 +805,7 @@ jobs:
       # (plugin fan-out, background phase B, jobs Kill/Wait) would otherwise
       # ship without race coverage. Pull requests sweep only the
       # concurrency-heavy packages so this required check stays fast; pushes
-      # to main-v2 keep the full ./... sweep as the safety net.
+      # to the release line keep the full ./... sweep as the safety net.
       - name: test -race (concurrency packages)
         if: github.event_name == 'pull_request'
         env:
@@ -982,7 +981,7 @@ jobs:
         shell: bash
         run: |
           # The SDK is a public module with a hard stdlib-only contract.
-          if go list -m all | grep -v '^github.com/esengine/DeepSeek-Reasonix/sdk/go$'; then
+          if go list -m all | grep -v '^github.com/SDSGK/reasonix-ns/sdk/go$'; then
             echo "sdk/go must not depend on anything outside the standard library"
             exit 1
           fi
@@ -1155,7 +1154,6 @@ jobs:
             -ignore 'label "windows-11-arm" is unknown' \
             -ignore 'label "ubuntu-22.04-arm" is unknown' \
             .github/workflows/release-studio.yml \
-            .github/workflows/studio-certum-signing-smoke.yml \
             .github/workflows/ci.yml
 
   govulncheck:

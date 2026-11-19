@@ -22,6 +22,11 @@ import (
 
 const artifactPrefix = "ReasonixStudio-"
 
+// ManifestName is the file the manifest is written and published under. It is
+// not "latest.json": under a GitHub release's download route that name is the
+// address the 1.x updater falls back to, and it must keep answering 404.
+const ManifestName = "studio-manifest.json"
+
 func main() {
 	if len(os.Args) != 4 && len(os.Args) != 5 {
 		fmt.Fprintln(os.Stderr, "usage: studio-manifest <dir> <version> <tag> [delta-dir]")
@@ -117,12 +122,14 @@ func run(dir, version, tag, deltaDir string, mirrored bool) error {
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(filepath.Join(dir, "latest.json"), append(b, '\n'), 0o644)
+	return os.WriteFile(filepath.Join(dir, ManifestName), append(b, '\n'), 0o644)
 }
 
-// releaseAsset addresses one artifact. The mirror serves it first when there is
-// one: GitHub's release CDN is what a CN route reaches slowest, and it stays as
-// the fallback for a mirror that is down.
+// releaseAsset addresses one artifact. It is this repository's release, so the
+// address is the same whether or not a mirror is configured: a mirror would be
+// a second copy of the same bytes at another host, and the mirror's root is
+// this repository's download root. The fallback stays for the case where the
+// two differ, so a client that predates the mirror still finds one address.
 func releaseAsset(repo, tag, name string, mirrored bool) update.Asset {
 	github := fmt.Sprintf("https://github.com/%s/releases/download/%s/%s", repo, tag, name)
 	if !mirrored {

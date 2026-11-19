@@ -11,7 +11,7 @@ try {
   console.error(
     `reasonix: no prebuilt binary for ${process.platform}-${process.arch}.\n` +
       `Install the matching optional package (${pkg}), or build from source:\n` +
-      `  https://github.com/esengine/DeepSeek-Reasonix`,
+      `  https://github.com/SDSGK/reasonix-ns`,
   );
   process.exit(1);
 }

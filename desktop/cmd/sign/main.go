@@ -183,8 +183,8 @@ func signFiles(files []string) error {
 // tarball under platforms["linux-amd64"].
 func genManifest(dir, version, tag string, notesVersions ...string) error {
 	repo := os.Getenv("GITHUB_REPOSITORY")
-	if repo == "" || repo == "esengine/reasonix" {
-		repo = "esengine/DeepSeek-Reasonix"
+	if repo == "" {
+		repo = "SDSGK/reasonix-ns"
 	}
 	notesVersion := version
 	if len(notesVersions) > 1 {
@@ -195,8 +195,8 @@ func genManifest(dir, version, tag string, notesVersions ...string) error {
 	}
 	m := update.Manifest{
 		Version:         version,
-		DownloadPage:    "https://reasonix.io/?download=desktop#start",
-		ReleaseNotesURL: "https://reasonix.io/changelog/" + notesVersion + "/",
+		DownloadPage:    "https://github.com/SDSGK/reasonix-ns/releases/tag/" + tag,
+		ReleaseNotesURL: "https://raw.githubusercontent.com/SDSGK/reasonix-ns/studio/release-notes/studio/" + strings.TrimPrefix(notesVersion, "v") + ".md",
 		Platforms:       map[string]update.Asset{},
 		NativePackages:  map[string]update.Asset{},
 		Downloads:       map[string]update.Asset{},

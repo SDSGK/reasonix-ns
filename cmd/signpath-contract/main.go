@@ -19,7 +19,7 @@ const (
 	contractPath = ".signpath/contracts/release-signing.yml"
 	projectSlug  = "DeepSeek-Reasonix"
 	policySlug   = "release-signing"
-	repository   = "https://github.com/esengine/DeepSeek-Reasonix.git"
+	repository   = "https://github.com/SDSGK/reasonix-ns.git"
 )
 
 // The studio line has its own tag namespace and its own protected branch, so

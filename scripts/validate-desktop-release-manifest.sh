@@ -52,7 +52,10 @@ if [[ ! "$notes_version" =~ $release_version_pattern ]]; then
 fi
 
 expected_tag="desktop-${version}"
-github_base="https://github.com/esengine/DeepSeek-Reasonix/releases/download/${expected_tag}/"
+github_base="https://github.com/SDSGK/reasonix-ns/releases/download/${expected_tag}/"
+# The desktop line is not published from this repository: these are the
+# addresses the 1.x line's own releases carried, kept so a manifest naming them
+# is still recognized rather than refused.
 r2_base="https://dl.reasonix.io/${expected_tag}/"
 legacy_preview_base="https://dl.reasonix.io/desktop-preview/"
 if [ "$channel" = "legacy-preview" ] && [ "$asset_base" = "$legacy_preview_base" ]; then

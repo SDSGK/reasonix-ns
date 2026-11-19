@@ -25,7 +25,7 @@ import (
 )
 
 const (
-	cliReleaseBase       = "https://github.com/esengine/DeepSeek-Reasonix/releases/download"
+	cliReleaseBase       = "https://github.com/SDSGK/reasonix-ns/releases/download"
 	maxCLIArchiveBytes   = int64(256 << 20)
 	maxCLIChecksumBytes  = int64(1 << 20)
 	maxExtractedCLIBytes = int64(128 << 20)

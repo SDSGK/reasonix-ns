@@ -8,7 +8,7 @@ import (
 	"encoding/json"
 	"os"
 
-	extension "github.com/esengine/DeepSeek-Reasonix/sdk/go"
+	extension "github.com/SDSGK/reasonix-ns/sdk/go"
 )
 
 type starter struct{}

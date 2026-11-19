@@ -71,7 +71,7 @@ func TestGenManifest(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	t.Setenv("GITHUB_REPOSITORY", "esengine/reasonix")
+	t.Setenv("GITHUB_REPOSITORY", "SDSGK/reasonix-ns")
 
 	if err := genManifest(dir, "v1.2.0", "desktop-v1.2.0"); err != nil {
 		t.Fatalf("genManifest: %v", err)
@@ -87,10 +87,10 @@ func TestGenManifest(t *testing.T) {
 	if m.Version != "v1.2.0" {
 		t.Fatalf("version = %q, want v1.2.0", m.Version)
 	}
-	if m.DownloadPage != "https://reasonix.io/?download=desktop#start" {
+	if m.DownloadPage != "https://github.com/SDSGK/reasonix-ns/releases/tag/desktop-v1.2.0" {
 		t.Fatalf("download_page = %q, want official install page", m.DownloadPage)
 	}
-	if m.ReleaseNotesURL != "https://reasonix.io/changelog/v1.2.0/" {
+	if m.ReleaseNotesURL != "https://raw.githubusercontent.com/SDSGK/reasonix-ns/studio/release-notes/studio/1.2.0.md" {
 		t.Fatalf("release_notes_url = %q, want exact version history", m.ReleaseNotesURL)
 	}
 	if len(m.Platforms) != 5 {
@@ -100,7 +100,7 @@ func TestGenManifest(t *testing.T) {
 	if !ok {
 		t.Fatal("windows-amd64 missing")
 	}
-	wantURL := "https://github.com/esengine/DeepSeek-Reasonix/releases/download/desktop-v1.2.0/Reasonix-windows-amd64-installer.exe"
+	wantURL := "https://github.com/SDSGK/reasonix-ns/releases/download/desktop-v1.2.0/Reasonix-windows-amd64-installer.exe"
 	if win.URL != wantURL {
 		t.Fatalf("windows url = %q, want %q", win.URL, wantURL)
 	}
@@ -174,7 +174,7 @@ func TestGenManifestCanReuseStableNotesForStandaloneRC(t *testing.T) {
 	if err := json.Unmarshal(raw, &m); err != nil {
 		t.Fatal(err)
 	}
-	if m.ReleaseNotesURL != "https://reasonix.io/changelog/v1.3.0/" {
+	if m.ReleaseNotesURL != "https://raw.githubusercontent.com/SDSGK/reasonix-ns/studio/release-notes/studio/1.3.0.md" {
 		t.Fatalf("release_notes_url = %q, want stable base history", m.ReleaseNotesURL)
 	}
 }
@@ -191,7 +191,7 @@ func TestGenManifestIgnoresUnknownNativePackages(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	t.Setenv("GITHUB_REPOSITORY", "esengine/DeepSeek-Reasonix")
+	t.Setenv("GITHUB_REPOSITORY", "SDSGK/reasonix-ns")
 	if err := genManifest(dir, "v1.2.0", "desktop-v1.2.0"); err != nil {
 		t.Fatalf("genManifest: %v", err)
 	}

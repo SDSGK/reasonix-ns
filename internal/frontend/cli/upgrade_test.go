@@ -11,7 +11,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"strings"
@@ -225,7 +224,7 @@ func completeCLIRelease(tag string, prerelease bool) ghRelease {
 	for _, name := range requiredCLIAssets {
 		assets = append(assets, ghAsset{
 			Name:               name,
-			BrowserDownloadURL: fmt.Sprintf("https://github.com/esengine/DeepSeek-Reasonix/releases/download/%s/%s", tag, name),
+			BrowserDownloadURL: fmt.Sprintf("https://github.com/SDSGK/reasonix-ns/releases/download/%s/%s", tag, name),
 			Size:               42,
 		})
 	}
@@ -274,13 +273,13 @@ func TestPickCLIRelease(t *testing.T) {
 	}
 
 	spoofed := completeCLIRelease("v1.7.0", false)
-	spoofed.Assets[0].BrowserDownloadURL = "https://github.com@evil.invalid/esengine/DeepSeek-Reasonix/releases/download/v1.7.0/reasonix-darwin-amd64.tar.gz"
+	spoofed.Assets[0].BrowserDownloadURL = "https://github.com@evil.invalid/SDSGK/reasonix-ns/releases/download/v1.7.0/reasonix-darwin-amd64.tar.gz"
 	if got := pick([]ghRelease{spoofed, completeCLIRelease("v1.6.0", false)}, cliReleaseStable); got != "v1.6.0" {
 		t.Errorf("release with spoofed asset host: got %q, want v1.6.0", got)
 	}
 
 	wrongTag := completeCLIRelease("v1.7.0", false)
-	wrongTag.Assets[0].BrowserDownloadURL = "https://github.com/esengine/DeepSeek-Reasonix/releases/download/v1.6.0/reasonix-darwin-amd64.tar.gz"
+	wrongTag.Assets[0].BrowserDownloadURL = "https://github.com/SDSGK/reasonix-ns/releases/download/v1.6.0/reasonix-darwin-amd64.tar.gz"
 	if got := pick([]ghRelease{wrongTag, completeCLIRelease("v1.6.0", false)}, cliReleaseStable); got != "v1.6.0" {
 		t.Errorf("release with cross-tag asset URL: got %q, want v1.6.0", got)
 	}
@@ -507,59 +506,13 @@ func TestPersistCLIReleaseChannelRemovesLegacyConfig(t *testing.T) {
 	}
 }
 
-func TestFetchCLIReleasePointer(t *testing.T) {
-	valid := completeCLIRelease("v1.18.0", false)
-	invalidMetadata := completeCLIRelease("v1.18.0-preview.1", true)
-	incomplete := completeCLIRelease("v1.18.0", false)
-	incomplete.Assets = incomplete.Assets[:len(incomplete.Assets)-1]
-	insecure := completeCLIRelease("v1.18.0", false)
-	insecure.Assets[0].BrowserDownloadURL = "http://example.invalid/reasonix.tar.gz"
-
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Header.Get("Accept") != "application/json" || r.Header.Get("User-Agent") != "reasonix-cli" {
-			t.Errorf("unexpected pointer request headers: Accept=%q User-Agent=%q", r.Header.Get("Accept"), r.Header.Get("User-Agent"))
-		}
-		var release ghRelease
-		switch r.URL.Path {
-		case "/valid":
-			release = valid
-		case "/incomplete":
-			release = incomplete
-		case "/insecure":
-			release = insecure
-		default:
-			release = invalidMetadata
-		}
-		if err := json.NewEncoder(w).Encode(release); err != nil {
-			t.Errorf("encode release pointer: %v", err)
-		}
-	}))
-	defer server.Close()
-
-	release, err := fetchCLIReleasePointer(server.Client(), server.URL+"/valid", cliReleaseStable)
-	if err != nil || release.TagName != "v1.18.0" {
-		t.Fatalf("valid official pointer = (%+v, %v)", release, err)
-	}
-	if _, err := fetchCLIReleasePointer(server.Client(), server.URL+"/invalid", cliReleaseStable); err == nil {
-		t.Fatal("prerelease pointer should fail closed")
-	}
-	if _, err := fetchCLIReleasePointer(server.Client(), server.URL+"/incomplete", cliReleaseStable); err == nil {
-		t.Fatal("pointer missing a required CLI asset should fall back")
-	}
-	if _, err := fetchCLIReleasePointer(server.Client(), server.URL+"/insecure", cliReleaseStable); err == nil {
-		t.Fatal("pointer with an insecure asset URL should fall back")
-	}
-}
-
 type upgradeRoundTripFunc func(*http.Request) (*http.Response, error)
 
 func (fn upgradeRoundTripFunc) RoundTrip(request *http.Request) (*http.Response, error) {
 	return fn(request)
 }
 
-func TestFetchLatestReleaseFallsThroughIncompletePointerAndGitHubRelease(t *testing.T) {
-	incompletePointer := completeCLIRelease("v1.8.0", false)
-	incompletePointer.Assets = incompletePointer.Assets[:len(incompletePointer.Assets)-1]
+func TestFetchLatestReleaseSkipsAnIncompleteGitHubRelease(t *testing.T) {
 	incompleteGitHub := completeCLIRelease("v1.7.0", false)
 	incompleteGitHub.Assets = incompleteGitHub.Assets[:len(incompleteGitHub.Assets)-1]
 	completeGitHub := completeCLIRelease("v1.6.0", false)
@@ -567,8 +520,6 @@ func TestFetchLatestReleaseFallsThroughIncompletePointerAndGitHubRelease(t *test
 	client := &http.Client{Transport: upgradeRoundTripFunc(func(request *http.Request) (*http.Response, error) {
 		var payload any
 		switch request.URL.String() {
-		case cliGatewayBase + "/stable/latest.json":
-			payload = incompletePointer
 		case ghAPIReleases:
 			payload = []ghRelease{incompleteGitHub, completeGitHub}
 		default:

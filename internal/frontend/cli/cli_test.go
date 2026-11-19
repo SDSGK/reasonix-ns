@@ -1033,8 +1033,11 @@ func TestCLITelemetryConsentDefaultsYesAndPromptsOnlyOnce(t *testing.T) {
 	if got != want || starts != 1 {
 		t.Fatalf("first start = %p, calls=%d; want %p, 1", got, starts, want)
 	}
-	if !strings.Contains(out.String(), "crash.reasonix.io") || !strings.Contains(out.String(), "[Y/n]:") || !strings.Contains(out.String(), "reasonix config telemetry off") {
+	if !strings.Contains(out.String(), "[Y/n]:") || !strings.Contains(out.String(), "reasonix config telemetry off") {
 		t.Fatalf("consent prompt is incomplete: %q", out.String())
+	}
+	if strings.Contains(out.String(), "crash.reasonix.io") {
+		t.Fatalf("consent prompt names a service this project does not provide: %q", out.String())
 	}
 	if errOut.Len() != 0 {
 		t.Fatalf("unexpected consent stderr: %q", errOut.String())
@@ -1254,10 +1257,13 @@ func TestCLITelemetryConsentPromptIsLocalized(t *testing.T) {
 		startCLITelemetryWithIO(config.Default(), telemetry.Options{
 			Version: "v1.20.0", Interactive: true, CLIMode: "tui",
 		}, strings.NewReader("\n"), &out, io.Discard)
-		for _, required := range []string{"crash.reasonix.io", "reasonix config telemetry off", "[Y/n]:"} {
+		for _, required := range []string{"reasonix config telemetry off", "[Y/n]:"} {
 			if !strings.Contains(out.String(), required) {
 				t.Fatalf("%s consent prompt missing %q: %q", lang, required, out.String())
 			}
+		}
+		if strings.Contains(out.String(), "crash.reasonix.io") {
+			t.Fatalf("%s consent prompt names a service this project does not provide: %q", lang, out.String())
 		}
 	}
 }

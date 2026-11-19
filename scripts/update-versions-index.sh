@@ -3,7 +3,7 @@
 #
 # The index is what lets a user go back: it lists which versions were ever
 # public and where each one's immutable manifest lives. It deliberately does NOT
-# copy asset URLs or signatures — an entry points at <tag>/latest.json, so a
+# copy asset URLs or signatures — an entry points at <tag>/studio-manifest.json, so a
 # rollback download verifies through exactly the same path as a forward update
 # and there is never a second source of truth for what an artifact should be.
 #
@@ -36,9 +36,9 @@ for value in "$version" "$tag" "$channel" "$published_at"; do
   fi
 done
 case "$notes" in
-  ''|https://dl.reasonix.io/studio/notes/*.md) ;;
+  ''|https://raw.githubusercontent.com/SDSGK/reasonix-ns/studio/release-notes/studio/*.md) ;;
   *)
-    echo "::error::notes-url must be an object under https://dl.reasonix.io/studio/notes/, got $notes" >&2
+    echo "::error::notes-url must be a file under https://raw.githubusercontent.com/SDSGK/reasonix-ns/studio/release-notes/studio/, got $notes" >&2
     exit 1
     ;;
 esac
@@ -88,7 +88,7 @@ printf '%s' "$base" | jq \
           tag: $tag,
           channel: $channel,
           publishedAt: $publishedAt,
-          manifest: ("https://dl.reasonix.io/" + $tag + "/latest.json"),
+          manifest: ("https://github.com/SDSGK/reasonix-ns/releases/download/" + $tag + "/studio-manifest.json"),
         } + (if $notes == "" then {} else {notes: $notes} end)]
       # Existing entries win: unique_by keeps the first of each group, so a
       # rerun cannot rewrite what was already published under that version.

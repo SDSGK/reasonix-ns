@@ -155,6 +155,11 @@ func (s *Service) postWithdraw(ctx context.Context, id, token, receipt string) e
 // do performs one request and turns whatever came back into a sentinel.
 func (s *Service) do(req *http.Request, out any) error {
 	provider.ApplyClientIdentity(req)
+	if s.base == "" {
+		// No feedback service is configured, so there is nowhere to send a
+		// report and nothing leaves this machine.
+		return ErrUnavailable
+	}
 	resp, err := s.http.Do(req)
 	if err != nil {
 		if cerr := req.Context().Err(); cerr != nil {

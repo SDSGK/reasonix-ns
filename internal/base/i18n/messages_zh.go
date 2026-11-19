@@ -723,7 +723,7 @@ var Chinese = Messages{
 	ReportHeaderFmt:           "CLI 崩溃报告 %s",
 	ReportCapturedFmt:         "捕获时间：%s",
 	ReportPreviewOnlyFmt:      "当前仅预览。运行 `reasonix report send %s` 可发送这份报告。",
-	ReportSendPrompt:          "将这份已脱敏报告发送到 crash.reasonix.io？",
+	ReportSendPrompt:          "将这份已脱敏报告发送到已配置的崩溃报告服务？",
 	ReportKept:                "报告已保留在本地。",
 	ReportDeletedFmt:          "已删除 CLI 崩溃报告 %s。",
 	ReportSentFmt:             "已发送 CLI 崩溃报告 %s。",
@@ -737,7 +737,7 @@ var Chinese = Messages{
   reasonix report send [ID]       发送已审阅报告，成功后删除本地副本
   reasonix report delete [ID]     不发送，直接删除本地报告`,
 
-	CLITelemetryConsentNotice:           "Reasonix 可以向 crash.reasonix.io 发送匿名、完全不含内容的 CLI 使用统计：随机安装 ID、版本、操作系统和固定质量分桶。绝不会发送 prompt、回答、代码、路径、模型或工具内容、环境变量。之后可运行 `reasonix config telemetry off` 关闭。",
+	CLITelemetryConsentNotice:           "配置了遥测服务时，Reasonix 可以发送匿名、完全不含内容的 CLI 使用统计：随机安装 ID、版本、操作系统和固定质量分桶。绝不会发送 prompt、回答、代码、路径、模型或工具内容、环境变量。之后可运行 `reasonix config telemetry off` 关闭。",
 	CLITelemetryConsentPrompt:           "允许发送匿名 CLI 使用统计吗？",
 	CLITelemetryConsentInvalid:          "请输入 y 或 n。",
 	CLITelemetryConsentSaveFailedFmt:    "由于无法保存偏好设置，CLI 使用统计仍保持关闭：%v",
@@ -745,7 +745,7 @@ var Chinese = Messages{
 
 	MinttyConsoleHint:            "Reasonix 的终端界面需要 Windows 控制台，而当前终端（Git Bash / mintty）不是。\n请在 cmd、PowerShell 或 Windows Terminal 里运行；在这里仍可用 `reasonix run \"任务\"` 执行单个任务。\n",
 	OpenedNestedWithoutAskingFmt: "按设置（设置 > 智能体行为 > 会话间消息）的允许，已在不询问的情况下打开本项目内的 %d 个文件夹：%s",
-	StandaloneConsoleHint:        "这是 Reasonix 命令行工具，需要在 PowerShell 等终端里运行。\n要用桌面应用，请安装 Reasonix Studio（ReasonixStudio-windows-amd64-installer.exe）：\n  https://github.com/esengine/DeepSeek-Reasonix/releases?q=studio-v&expanded=true\n\n按回车关闭此窗口。\n",
+	StandaloneConsoleHint:        "这是 Reasonix 命令行工具，需要在 PowerShell 等终端里运行。\n要用桌面应用，请安装 Reasonix Studio（ReasonixStudio-windows-amd64-installer.exe）：\n  https://github.com/SDSGK/reasonix-ns/releases?q=studio-v&expanded=true\n\n按回车关闭此窗口。\n",
 	UsageBody: `reasonix — 由配置和插件驱动的 coding agent（多模型）
 
 用法：

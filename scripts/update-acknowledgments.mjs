@@ -3,7 +3,7 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { isBotAccount, thanksExclusions } from './release-credits.mjs';
 
-const repo = 'esengine/DeepSeek-Reasonix';
+const repo = 'SDSGK/reasonix-ns';
 const api = `https://api.github.com/repos/${repo}/contributors?per_page=50&anon=1`;
 const startMarker = '<!-- reasonix-top-contributors:start -->';
 const endMarker = '<!-- reasonix-top-contributors:end -->';

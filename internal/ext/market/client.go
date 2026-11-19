@@ -10,6 +10,7 @@ import (
 	"maps"
 	"net/http"
 	"net/url"
+	"os"
 	"path/filepath"
 	"reflect"
 	"regexp"
@@ -19,12 +20,16 @@ import (
 )
 
 const (
-	registryHost    = "crash.reasonix.io"
 	requestTimeout  = 15 * time.Second
 	maxListBody     = 1 << 20
 	maxDetailBody   = 512 << 10
 	defaultPageSize = 24
 )
+
+// registryHost is the extension market's registry. It is empty when this
+// project provides no registry, and then the market has nothing to reach:
+// REASONIX_MARKET_HOST points it at a registry of your own.
+var registryHost = strings.TrimSpace(os.Getenv("REASONIX_MARKET_HOST"))
 
 var (
 	// ErrUnreachable: the registry could not be reached at all.

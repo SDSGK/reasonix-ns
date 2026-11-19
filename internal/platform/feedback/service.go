@@ -21,7 +21,10 @@ import (
 )
 
 const (
-	defaultBase  = "https://crash.reasonix.io"
+	// defaultBase is where feedback is sent. It is empty when this project
+	// provides no feedback service, and then nothing is sent: set
+	// REASONIX_FEEDBACK_URL to point it at a service of your own.
+	defaultBase  = ""
 	baseEnv      = "REASONIX_FEEDBACK_URL"
 	snippetRunes = 80
 )

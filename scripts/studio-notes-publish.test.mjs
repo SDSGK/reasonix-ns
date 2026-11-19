@@ -16,7 +16,7 @@ function index(existing, ...args) {
   return { status: run.status, stderr: run.stderr, json: run.status === 0 ? JSON.parse(run.stdout) : null };
 }
 
-const NOTES = "https://dl.reasonix.io/studio/notes/2.32.0.md";
+const NOTES = "https://raw.githubusercontent.com/SDSGK/reasonix-ns/studio/release-notes/studio/2.32.0.md";
 
 test("an entry carries notes only when a notes address is given", () => {
   const withNotes = index("-", "v2.32.0", "studio-v2.32.0", "studio", "2026-10-09T00:00:00Z", "20", NOTES);
@@ -26,7 +26,7 @@ test("an entry carries notes only when a notes address is given", () => {
 });
 
 test("a notes address outside the notes prefix is refused", () => {
-  for (const bad of ["https://example.com/2.32.0.md", "https://dl.reasonix.io/studio-v2.32.0/latest.json"]) {
+  for (const bad of ["https://example.com/2.32.0.md", "https://github.com/SDSGK/reasonix-ns/releases/download/studio-v2.32.0/studio-manifest.json"]) {
     const run = index("-", "v2.32.0", "studio-v2.32.0", "studio", "2026-10-09T00:00:00Z", "20", bad);
     assert.notEqual(run.status, 0);
   }
@@ -96,7 +96,7 @@ test("only a confirmed upload produces the notes pointer", () => {
 test("stable publications deploy from website without widening Pages or signing permissions", () => {
   const job = workflow.match(/^  website:\n[\s\S]*?(?=^  [a-z][a-z-]*:|$(?![\s\S]))/m)?.[0] ?? "";
   assert.match(job, /needs: \[resolve, publish\]/);
-  assert.match(job, /github\.repository == 'esengine\/DeepSeek-Reasonix'/);
+  assert.match(job, /github\.repository == 'SDSGK\/reasonix-ns'/);
   assert.match(job, /needs\.resolve\.outputs\.candidate != 'true'/);
   assert.match(job, /actions: write/);
   assert.doesNotMatch(job, /id-token:|pages:|secrets:/);
@@ -192,8 +192,8 @@ exit 3`);
   return { run, read, calls: () => (existsSync(path.join(root, "calls.log")) ? readFileSync(path.join(root, "calls.log"), "utf8") : "") };
 }
 
-const entry = (v, extra = {}) => ({ version: `v${v}`, tag: `studio-v${v}`, channel: "studio", publishedAt: "2026-10-01T00:00:00Z", manifest: `https://dl.reasonix.io/studio-v${v}/latest.json`, ...extra });
-const catalog = () => ({ schemaVersion: 1, updatedAt: "x", versions: [entry("2.3.0"), entry("2.2.0"), entry("2.1.0", { notes: "https://dl.reasonix.io/studio/notes/2.1.0.md" })] });
+const entry = (v, extra = {}) => ({ version: `v${v}`, tag: `studio-v${v}`, channel: "studio", publishedAt: "2026-10-01T00:00:00Z", manifest: `https://github.com/SDSGK/reasonix-ns/releases/download/studio-v${v}/studio-manifest.json`, ...extra });
+const catalog = () => ({ schemaVersion: 1, updatedAt: "x", versions: [entry("2.3.0"), entry("2.2.0"), entry("2.1.0", { notes: "https://raw.githubusercontent.com/SDSGK/reasonix-ns/studio/release-notes/studio/2.1.0.md" })] });
 
 test("the backfill is a dry run unless asked, and uploads and writes nothing", () => {
   const s = sandbox({ catalog: catalog(), tags: ["2.3.0"] });
@@ -215,9 +215,9 @@ test("apply uploads the missing notes, skips what exists, and leaves a version w
   assert.equal(s.read("studio/notes/2.2.0.md"), "kept\n");
   const next = JSON.parse(s.read("studio/versions.json"));
   const byVersion = Object.fromEntries(next.versions.map((e) => [e.version, e]));
-  assert.equal(byVersion["v2.3.0"].notes, "https://dl.reasonix.io/studio/notes/2.3.0.md");
-  assert.equal(byVersion["v2.2.0"].notes, "https://dl.reasonix.io/studio/notes/2.2.0.md");
-  assert.equal(byVersion["v2.1.0"].notes, "https://dl.reasonix.io/studio/notes/2.1.0.md");
+  assert.equal(byVersion["v2.3.0"].notes, "https://raw.githubusercontent.com/SDSGK/reasonix-ns/studio/release-notes/studio/2.3.0.md");
+  assert.equal(byVersion["v2.2.0"].notes, "https://raw.githubusercontent.com/SDSGK/reasonix-ns/studio/release-notes/studio/2.2.0.md");
+  assert.equal(byVersion["v2.1.0"].notes, "https://raw.githubusercontent.com/SDSGK/reasonix-ns/studio/release-notes/studio/2.1.0.md");
 });
 
 test("a version with no notes file gets no field", () => {

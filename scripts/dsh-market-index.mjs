@@ -10,7 +10,7 @@ import { pathToFileURL } from 'node:url'
 
 const PKG_DIR = 'integrations/dsh-plugin'
 const INDEX = `${PKG_DIR}/market-index.json`
-const INDEX_URL = `https://raw.githubusercontent.com/esengine/DeepSeek-Reasonix/studio/${INDEX}`
+const INDEX_URL = `https://raw.githubusercontent.com/SDSGK/reasonix-ns/studio/${INDEX}`
 const VALIDATOR = '@deepseek-ai/dsh-plugin-market-index'
 
 const git = (...args) => execFileSync('git', args, { encoding: 'utf8' }).trim()

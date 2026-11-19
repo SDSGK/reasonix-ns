@@ -3,7 +3,7 @@
 # release workflow read them: a rename here is a version nobody is offered.
 appId: io.reasonix.studio
 productName: Reasonix Studio
-copyright: Copyright © esengine
+copyright: Copyright © SDSGK
 
 directories:
   output: ../../dist
@@ -103,7 +103,7 @@ linux:
     - AppImage
   icon: assets/icon.png
   category: Development
-  maintainer: esengine <esengine@users.noreply.github.com>
+  maintainer: SDSGK <sdsgk@users.noreply.github.com>
   artifactName: ReasonixStudio-linux-${arch}.${ext}
 
 appImage:

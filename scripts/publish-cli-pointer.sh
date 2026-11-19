@@ -8,6 +8,10 @@
 # therefore live in a GitHub release named v<version> beside the studio-v<version>
 # one, and the manifest is built from that release exactly as the 1.x line builds it.
 #
+# This pointer serves the 1.x line, which reads it from a mirror of its own. The
+# updater shipped here reads the GitHub Releases API instead, so it does not
+# depend on this being written.
+#
 # Order matters: GitHub release, then the immutable per-tag record, then the
 # mutable pointer. A rerun that finds any of them already there checks it against
 # its own contents and keeps it; archives are not byte-reproducible, so an

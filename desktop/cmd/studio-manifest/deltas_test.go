@@ -15,7 +15,7 @@ import (
 // being offered.
 func TestManifestListsEachSignedDeltaFromTheMirror(t *testing.T) {
 	dir, deltaDir := testenv.TempDir(t), testenv.TempDir(t)
-	t.Setenv("GITHUB_REPOSITORY", "esengine/DeepSeek-Reasonix")
+	t.Setenv("GITHUB_REPOSITORY", "SDSGK/reasonix-ns")
 	if err := os.WriteFile(filepath.Join(dir, "ReasonixStudio-windows-amd64-installer.exe"), []byte("x"), 0o644); err != nil {
 		t.Fatal(err)
 	}
@@ -39,7 +39,7 @@ func TestManifestListsEachSignedDeltaFromTheMirror(t *testing.T) {
 	if err := run(dir, "v0.1.0", "studio-v0.1.0", deltaDir, true); err != nil {
 		t.Fatalf("run: %v", err)
 	}
-	raw, err := os.ReadFile(filepath.Join(dir, "latest.json"))
+	raw, err := os.ReadFile(filepath.Join(dir, ManifestName))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -48,7 +48,7 @@ func TestManifestListsEachSignedDeltaFromTheMirror(t *testing.T) {
 		t.Fatal(err)
 	}
 	d, ok := m.Deltas["windows-amd64"]
-	want := "https://dl.reasonix.io/studio-v0.1.0/delta/windows-amd64/index.json.zst"
+	want := "https://github.com/SDSGK/reasonix-ns/releases/download/studio-v0.1.0/delta/windows-amd64/index.json.zst"
 	if !ok || d.Index.URL != want || d.Index.Sig != want+".minisig" || d.Index.Size != 11 || d.Chunks != update.StudioChunks {
 		t.Fatalf("deltas = %+v", m.Deltas)
 	}

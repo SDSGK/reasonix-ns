@@ -15,7 +15,12 @@ import (
 // release-studio.yml. It is a constant rather than something a caller names: a
 // catalog that could be pointed elsewhere is one whose entries would offer to
 // "update" Studio into a different product.
-const StudioCatalog = StudioMirror + "/studio/versions.json"
+//
+// It is the download route of this repository's latest release, so the catalog
+// is whatever that release published: a stable release is GitHub's latest and
+// a candidate is a prerelease, which is exactly the distinction the catalog
+// makes between a released version and one that is only being tried.
+const StudioCatalog = "https://github.com/" + StudioRepo + "/releases/latest/download/studio-versions.json"
 
 // Install is what a shell knows about itself that the kernel cannot work out.
 // A Go process inside an Electron bundle resolves neither half: os.Executable()

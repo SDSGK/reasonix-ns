@@ -30,11 +30,10 @@ import (
 )
 
 const (
-	ghOwner                = "esengine"
-	ghRepo                 = "DeepSeek-Reasonix"
+	ghOwner = "SDSGK"
+	ghRepo  = "reasonix-ns"
 	ghAPIReleases          = "https://api.github.com/repos/" + ghOwner + "/" + ghRepo + "/releases?per_page=100"
 	ghDownloadBase         = "https://github.com/" + ghOwner + "/" + ghRepo + "/releases/download"
-	cliGatewayBase         = "https://crash.reasonix.io/v1/cli/releases"
 	upgradeTimeout         = 60 * time.Second
 	maxCLIReleaseAssetSize = int64(1 << 30)
 )
@@ -521,14 +520,10 @@ func githubRateLimitHint(resp *http.Response) string {
 }
 
 // fetchLatestRelease queries the GitHub Releases API and returns the newest
-// strict CLI release in the selected public channel.
+// strict CLI release in the selected public channel. The release list is the
+// answer: a channel is a tag namespace, and the newest release in it is the
+// one an upgrade moves to.
 func fetchLatestRelease(c *http.Client, channel cliReleaseChannel) (*ghRelease, error) {
-	pointerURL := fmt.Sprintf("%s/%s/latest.json", cliGatewayBase, channel)
-	pointerRelease, pointerErr := fetchCLIReleasePointer(c, pointerURL, channel)
-	if pointerErr == nil {
-		return pointerRelease, nil
-	}
-
 	req, err := http.NewRequest(http.MethodGet, ghAPIReleases, nil)
 	if err != nil {
 		return nil, err
@@ -545,7 +540,7 @@ func fetchLatestRelease(c *http.Client, channel cliReleaseChannel) (*ghRelease, 
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("release gateway: %w; GitHub API: %s%s", pointerErr, resp.Status, githubRateLimitHint(resp))
+		return nil, fmt.Errorf("GitHub API: %s%s", resp.Status, githubRateLimitHint(resp))
 	}
 
 	var rels []ghRelease
@@ -556,37 +551,7 @@ func fetchLatestRelease(c *http.Client, channel cliReleaseChannel) (*ghRelease, 
 	if rel := pickCLIRelease(rels, channel); rel != nil {
 		return rel, nil
 	}
-	return nil, fmt.Errorf("release gateway: %w; no %s CLI release found in recent GitHub releases", pointerErr, channel)
-}
-
-func fetchCLIReleasePointer(c *http.Client, pointerURL string, channel cliReleaseChannel) (*ghRelease, error) {
-	req, err := http.NewRequest(http.MethodGet, pointerURL, nil)
-	if err != nil {
-		return nil, err
-	}
-	req.Header.Set("Accept", "application/json")
-	req.Header.Set("User-Agent", "reasonix-cli")
-
-	resp, err := c.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("%s", resp.Status)
-	}
-
-	var rel ghRelease
-	if err := json.NewDecoder(resp.Body).Decode(&rel); err != nil {
-		return nil, err
-	}
-	if !releaseBelongsToCLIChannel(rel, channel) {
-		return nil, fmt.Errorf("pointer tag %q does not belong to %s", rel.TagName, channel)
-	}
-	if !releaseHasCompleteCLIAssets(rel) {
-		return nil, fmt.Errorf("pointer tag %q is missing required CLI assets", rel.TagName)
-	}
-	return &rel, nil
+	return nil, fmt.Errorf("no %s CLI release found in recent GitHub releases", channel)
 }
 
 func fetchBytesSized(c *http.Client, url string, expectedSize int64) ([]byte, error) {

@@ -15,7 +15,7 @@ import (
 
 func TestManifestRecordsEveryArtifactWithItsSignature(t *testing.T) {
 	dir := testenv.TempDir(t)
-	t.Setenv("GITHUB_REPOSITORY", "esengine/DeepSeek-Reasonix")
+	t.Setenv("GITHUB_REPOSITORY", "SDSGK/reasonix-ns")
 	body := []byte("studio archive bytes")
 	for _, name := range []string{
 		"ReasonixStudio-windows-amd64-installer.exe",
@@ -36,7 +36,7 @@ func TestManifestRecordsEveryArtifactWithItsSignature(t *testing.T) {
 	}
 
 	var m update.Manifest
-	raw, err := os.ReadFile(filepath.Join(dir, "latest.json"))
+	raw, err := os.ReadFile(filepath.Join(dir, ManifestName))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -73,7 +73,7 @@ func TestManifestRecordsEveryArtifactWithItsSignature(t *testing.T) {
 // asset, or the version panel offers a move it cannot make.
 func TestManifestResolvesOnlyWhatCanInstallItself(t *testing.T) {
 	dir := testenv.TempDir(t)
-	t.Setenv("GITHUB_REPOSITORY", "esengine/DeepSeek-Reasonix")
+	t.Setenv("GITHUB_REPOSITORY", "SDSGK/reasonix-ns")
 	for _, name := range []string{
 		"ReasonixStudio-linux-amd64.tar.gz",
 		"ReasonixStudio-windows-amd64.zip",
@@ -90,7 +90,7 @@ func TestManifestResolvesOnlyWhatCanInstallItself(t *testing.T) {
 		t.Fatalf("run: %v", err)
 	}
 	var m update.Manifest
-	raw, err := os.ReadFile(filepath.Join(dir, "latest.json"))
+	raw, err := os.ReadFile(filepath.Join(dir, ManifestName))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -128,7 +128,7 @@ func TestManifestResolvesOnlyWhatCanInstallItself(t *testing.T) {
 }
 
 func TestEmptyDirIsAFailedRelease(t *testing.T) {
-	t.Setenv("GITHUB_REPOSITORY", "esengine/DeepSeek-Reasonix")
+	t.Setenv("GITHUB_REPOSITORY", "SDSGK/reasonix-ns")
 	if err := run(testenv.TempDir(t), "v0.1.0", "studio-v0.1.0", "", false); err == nil {
 		t.Fatal("a release with no artifacts must fail, not publish an empty manifest")
 	}
@@ -136,9 +136,11 @@ func TestEmptyDirIsAFailedRelease(t *testing.T) {
 
 // A mirrored release is fetched from the mirror first, with GitHub kept as the
 // address a client falls back to; every full artifact and its signature alike.
+// The mirror's root is this repository's own release download root, so the two
+// addresses are the same one until a mirror of its own is configured.
 func TestMirroredManifestPutsTheMirrorFirst(t *testing.T) {
 	dir := testenv.TempDir(t)
-	t.Setenv("GITHUB_REPOSITORY", "esengine/DeepSeek-Reasonix")
+	t.Setenv("GITHUB_REPOSITORY", "SDSGK/reasonix-ns")
 	for _, name := range []string{
 		"ReasonixStudio-windows-amd64-installer.exe",
 		"ReasonixStudio-darwin-universal.zip",
@@ -152,7 +154,7 @@ func TestMirroredManifestPutsTheMirrorFirst(t *testing.T) {
 		t.Fatalf("run: %v", err)
 	}
 	var m update.Manifest
-	raw, err := os.ReadFile(filepath.Join(dir, "latest.json"))
+	raw, err := os.ReadFile(filepath.Join(dir, ManifestName))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -171,7 +173,7 @@ func TestMirroredManifestPutsTheMirrorFirst(t *testing.T) {
 	for _, a := range all {
 		name := a.URL[strings.LastIndex(a.URL, "/")+1:]
 		mirror := update.StudioMirror + "/studio-v0.1.0/" + name
-		github := "https://github.com/esengine/DeepSeek-Reasonix/releases/download/studio-v0.1.0/" + name
+		github := "https://github.com/SDSGK/reasonix-ns/releases/download/studio-v0.1.0/" + name
 		if a.URL != mirror || a.Sig != mirror+".minisig" {
 			t.Errorf("%s: primary = %q / %q, want the mirror", name, a.URL, a.Sig)
 		}
@@ -195,7 +197,7 @@ func TestUnmirroredManifestNamesOnlyGitHub(t *testing.T) {
 // the same naming rule; each installer answers only its own platform key.
 func TestWindowsArchitecturesResolveToTheirOwnInstallers(t *testing.T) {
 	dir := testenv.TempDir(t)
-	t.Setenv("GITHUB_REPOSITORY", "esengine/DeepSeek-Reasonix")
+	t.Setenv("GITHUB_REPOSITORY", "SDSGK/reasonix-ns")
 	for _, name := range []string{
 		"ReasonixStudio-windows-amd64-installer.exe",
 		"ReasonixStudio-windows-amd64.zip",
@@ -210,7 +212,7 @@ func TestWindowsArchitecturesResolveToTheirOwnInstallers(t *testing.T) {
 		t.Fatalf("run: %v", err)
 	}
 	var m update.Manifest
-	raw, err := os.ReadFile(filepath.Join(dir, "latest.json"))
+	raw, err := os.ReadFile(filepath.Join(dir, ManifestName))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -245,12 +247,12 @@ func TestRPMRidesBesideTheDebWithoutMovingItsKey(t *testing.T) {
 		}
 	}
 	generate := func(dir string) update.Manifest {
-		t.Setenv("GITHUB_REPOSITORY", "esengine/DeepSeek-Reasonix")
+		t.Setenv("GITHUB_REPOSITORY", "SDSGK/reasonix-ns")
 		if err := run(dir, "v0.1.0", "studio-v0.1.0", "", true); err != nil {
 			t.Fatalf("run: %v", err)
 		}
 		var m update.Manifest
-		raw, err := os.ReadFile(filepath.Join(dir, "latest.json"))
+		raw, err := os.ReadFile(filepath.Join(dir, ManifestName))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -292,13 +294,13 @@ func TestRPMRidesBesideTheDebWithoutMovingItsKey(t *testing.T) {
 // own platform: an arm64 client must never be handed the amd64 .deb, and adding
 // the second architecture must not move the first one's entries.
 func TestLinuxArm64PackagesAreKeyedBesideAmd64(t *testing.T) {
-	t.Setenv("GITHUB_REPOSITORY", "esengine/DeepSeek-Reasonix")
+	t.Setenv("GITHUB_REPOSITORY", "SDSGK/reasonix-ns")
 	dir := testenv.TempDir(t)
 	generate := func() update.Manifest {
 		if err := run(dir, "v2.39.0", "studio-v2.39.0", "", true); err != nil {
-			t.Fatal(err)
+			t.Fatalf("run: %v", err)
 		}
-		raw, err := os.ReadFile(filepath.Join(dir, "latest.json"))
+		raw, err := os.ReadFile(filepath.Join(dir, ManifestName))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -335,7 +337,7 @@ func TestLinuxArm64PackagesAreKeyedBesideAmd64(t *testing.T) {
 			t.Fatalf("%s does not resolve to its own download", key)
 		}
 		mirror := update.StudioMirror + "/studio-v2.39.0/" + name
-		github := "https://github.com/esengine/DeepSeek-Reasonix/releases/download/studio-v2.39.0/" + name
+		github := "https://github.com/SDSGK/reasonix-ns/releases/download/studio-v2.39.0/" + name
 		if asset.URL != mirror || asset.Sig != mirror+".minisig" || asset.Fallback != github || asset.FallbackSig != github+".minisig" {
 			t.Errorf("%s loses its mirror, fallback or signature: %+v", key, asset)
 		}
@@ -352,12 +354,12 @@ func TestAnAppImageIsOfferedButNeverResolvedAsAnUpdate(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	t.Setenv("GITHUB_REPOSITORY", "esengine/DeepSeek-Reasonix")
+	t.Setenv("GITHUB_REPOSITORY", "SDSGK/reasonix-ns")
 	if err := run(dir, "v0.1.0", "studio-v0.1.0", "", true); err != nil {
 		t.Fatalf("run: %v", err)
 	}
 	var m update.Manifest
-	raw, _ := os.ReadFile(filepath.Join(dir, "latest.json"))
+	raw, _ := os.ReadFile(filepath.Join(dir, ManifestName))
 	if err := json.Unmarshal(raw, &m); err != nil {
 		t.Fatal(err)
 	}

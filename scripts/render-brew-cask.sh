@@ -5,7 +5,7 @@
 set -euo pipefail
 
 version="$1" tag="$2" sums="$3"
-base="https://github.com/esengine/DeepSeek-Reasonix/releases/download/${tag}"
+base="https://github.com/SDSGK/reasonix-ns/releases/download/${tag}"
 
 digest() {
   local d
@@ -56,7 +56,7 @@ cask "reasonix" do
 
   name "reasonix"
   desc "Cache-first DeepSeek coding agent for the terminal."
-  homepage "https://github.com/esengine/DeepSeek-Reasonix"
+  homepage "https://github.com/SDSGK/reasonix-ns"
 
   livecheck do
     skip "Auto-generated on release."
