@@ -111,7 +111,10 @@ type controllerDeps struct {
 	// Close cancels its still-running jobs.
 	jobs      *jobs.Manager
 	subagents SubagentReader
-	taskStore taskmonitor.WriteStore
+	// subagentRunner continues a sub-agent run with another turn; nil leaves
+	// continuation unavailable. See subagent_chat.go.
+	subagentRunner SubagentRunner
+	taskStore      taskmonitor.WriteStore
 	// workspaceLease is the Delivery writer owner shared with the executor.
 	// It is exposed only through a sanitized state snapshot for Desktop recovery.
 	workspaceLease *workspacelease.Owner
@@ -200,6 +203,7 @@ func newControllerDeps(opts Options, sink event.Sink, usageTee *goalUsageTee, ru
 		feedback:            opts.Feedback,
 		jobs:                opts.Jobs,
 		subagents:           opts.Subagents,
+		subagentRunner:      opts.SubagentRunner,
 		taskStore:           opts.TaskStore,
 		workspaceLease:      opts.WorkspaceLease,
 		mcp:                 newMcpManager(opts.Host, opts.Registry, pluginCtx, opts.MCPDefaultCallTimeout, hostFactNotice(opts.Executor)),

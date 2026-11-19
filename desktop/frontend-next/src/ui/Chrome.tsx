@@ -2,6 +2,8 @@ import { StudioIcon } from "./StudioIcon";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { t } from "../i18n";
 import { host as hostBridge } from "../port/host";
+import { requestLeaveAgent, useAgentCrumb } from "./agentCrumb";
+import { toggleAgentDeck, useAgentsRail } from "./agentRail";
 import type { HubPort } from "../port/hub";
 import type { AccountState, AgentPort, SessionStatus, WorkspaceInfo } from "../port/port";
 import { DeviceBar } from "./DeviceBar";
@@ -46,25 +48,19 @@ interface Props {
   hub?: HubPort;
   onError?: (e: unknown) => void;
 }
-
 export function Chrome({ port, status, workspace: ws, title, steer, account, host, theme, onTheme, onFind, view, rows, surfaces, onView, hub, onError }: Props) {
   const root = status?.workspaceRoot || status?.cwd || "";
   const project = root ? base(root) : "—";
+  // The sub-agent the reader is inside, named by the pane that shows it.
+  const crumb = useAgentCrumb();
+  // The focused pane's delegate summary, which the badge names.
+  const agentsRail = useAgentsRail();
   // The folder mark opens the project itself. Only a shell that can enter a
   // folder offers it, and only once a pane names where that folder is; a
   // pane driven from another machine names a path this shell cannot enter,
   // so the mark stays disabled there. The kernel is still the one that
   // answers where the folder lives.
   const canOpenProject = !!hub && root !== "" && !host && hostBridge().opensFolders();
-  const [agentsRail, setAgentsRail] = useState<{ live: number; total: number } | null>(null);
-  useEffect(() => {
-    const onRail = (e: Event) => {
-      const detail = (e as CustomEvent<{ live: number; total: number }>).detail;
-      if (detail && detail.total > 0) setAgentsRail(detail);
-    };
-    window.addEventListener("studio:agents-rail", onRail);
-    return () => window.removeEventListener("studio:agents-rail", onRail);
-  }, []);
   const openProject = () => {
     if (hub && root) void hub.openWorkspace(root).catch((e) => onError?.(e));
   };
@@ -117,17 +113,24 @@ export function Chrome({ port, status, workspace: ws, title, steer, account, hos
           <span className="crumbsep">/</span>
         </span>
         <b title={status?.sessionPath}>{sessionName(title, status?.sessionPath)}</b>
+        {crumb && (
+          <>
+            <span className="crumbsep" aria-hidden="true">/</span>
+            <span className="crumb-agent" title={crumb.name}>{crumb.name}</span>
+            <button type="button" className="crumb-back" data-action="chrome.leave-agent" onClick={() => requestLeaveAgent(crumb.ref)}>{t("common.back")}</button>
+          </>
+        )}
         {agentsRail && agentsRail.total > 0 && (
           <button
             type="button"
             className="agentrail-badge"
             data-action="agentrail.badge"
-            title="查看本会话的子智能体"
-            onClick={() => window.dispatchEvent(new CustomEvent("studio:agents-rail-open"))}
+            title={t("查看本会话的子智能体")}
+            onClick={() => toggleAgentDeck()}
           >
             <span aria-hidden="true">⏱</span>
-            <b>{agentsRail.total} 个子智能体</b>
-            {agentsRail.live > 0 && <span className="agentrail-live">{agentsRail.live} 运行中</span>}
+            <b>{t("{n} 个子智能体", { n: agentsRail.total })}</b>
+            {agentsRail.live > 0 && <span className="agentrail-live">{t("运行中", { n: agentsRail.live })}</span>}
           </button>
         )}
         {phone && device && (

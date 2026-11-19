@@ -28,3 +28,13 @@ export interface SubagentTranscript {
   total: number;
   live: boolean;
 }
+
+/** One continued turn of a run: POST /subagents/{ref}/submit. The run keeps its
+ *  reference and its transcript, so the answer is read from the same place the
+ *  first one was read from. */
+export interface SubagentTurn {
+  ref: string;
+  answer: string;
+  read?: string[];
+  wrote?: string[];
+}

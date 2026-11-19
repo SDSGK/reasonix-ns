@@ -6,13 +6,7 @@ import { toolFailed } from "./cards/outcome";
 // One reading of "what left this context". The kernel marks a dispatch with a
 // profile; the tool name cannot say it, because every dispatcher is reached
 // through the use_capability proxy and the card carries the proxy's name.
-// Older journals predate profiles, and their direct "task" calls carry no
-// other mark, so the two unambiguous names are recognised retroactively — a
-// proxy-carried delegation keeps its profile even when its name is the
-// proxy's own, so nothing the kernel marked is lost.
-const legacyDispatchNames = new Set(["task", "read_only_task"]);
-export const isDelegation = (tool: Tool): boolean =>
-  tool.profile != null || legacyDispatchNames.has(tool.name);
+export const isDelegation = (tool: Tool): boolean => tool.profile != null;
 
 // A dispatch opens at least one context; a batch opens as many as it declared.
 export const agentsOf = (tool: Tool): number => Math.max(tool.profile?.count ?? 1, 1);

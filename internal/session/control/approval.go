@@ -17,6 +17,30 @@ import (
 	"reasonix/internal/safety/permission"
 )
 
+// approvalReply is what the prompt's answer carries back: whether the call is
+// allowed, and whether the answer outlives the turn that asked it.
+type approvalReply struct {
+	allow   bool
+	session bool
+	persist bool // true = write "always allow" rule to config
+}
+
+// pendingApproval is a prompt waiting for its answer: the tool it guards, what
+// it would do, and where the answer goes.
+type pendingApproval struct {
+	id           string
+	tool         string
+	subject      string
+	reason       string
+	rawInput     json.RawMessage
+	fresh        bool
+	requireHuman bool
+	autoDrain    bool
+	kind         string // tool | plan | recovery; empty = tool
+	recovery     *event.RecoveryApproval
+	reply        chan approvalReply
+}
+
 // approvalManager owns the approval/ask prompt bookkeeping and the runtime
 // approval posture, behind its own locks and off the controller's c.mu. It is a
 // strict leaf: its methods only touch its own state and never call back into the

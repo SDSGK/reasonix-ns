@@ -20,7 +20,7 @@ function draw(state: AccountState | null) {
 it("is account, version and diagnostics, and about: one row per setting", () => {
   draw({ signedIn: false });
   expect([...document.querySelectorAll(".prefs-card > header h3")].map((h) => h.textContent)).toEqual(["账号", "版本与诊断", "关于"]);
-  for (const id of ["account", "versions", "logs", "community", "sponsor"]) expect(document.querySelector(`[data-setting="${id}"]`), id).toBeTruthy();
+  for (const id of ["account", "versions", "logs", "community"]) expect(document.querySelector(`[data-setting="${id}"]`), id).toBeTruthy();
 });
 
 it("offers sign-in when signed out and the account when signed in", () => {

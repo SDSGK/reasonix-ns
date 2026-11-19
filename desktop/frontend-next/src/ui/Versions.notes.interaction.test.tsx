@@ -144,7 +144,7 @@ describe("version notes on the version panel", () => {
     await userEvent.click((await screen.findAllByRole("button", { name: "更新内容" }))[0]);
     expect(await screen.findByText("暂时取不到更新内容，请检查网络后重试")).toBeTruthy();
     const link = screen.getByRole("link", { name: "在 GitHub 查看" });
-    expect(link.getAttribute("href")).toBe("https://github.com/esengine/DeepSeek-Reasonix/releases/tag/studio-v2.21.0");
+    expect(link.getAttribute("href")).toBe("https://github.com/SDSGK/reasonix-ns/releases/tag/studio-v2.21.0");
     fail = false;
     await userEvent.click(screen.getByRole("button", { name: "重试" }));
     expect(await screen.findByText("好了")).toBeTruthy();

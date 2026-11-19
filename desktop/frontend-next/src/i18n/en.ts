@@ -24,7 +24,6 @@ import { EN_COMPOSER } from "./en_composer";
 import { EN_BACKUP } from "./en_backup";
 import { EN_FEEDBACK } from "./en_feedback";
 import { EN_COMMUNITY } from "./en_community";
-import { EN_SPONSOR } from "./en_sponsor";
 import { EN_MEMORY } from "./en_memory";
 
 export const EN: Record<string, string> = {
@@ -90,7 +89,6 @@ export const EN: Record<string, string> = {
   ...EN_TOOL_BLURBS,
   ...EN_PERSONA,
   ...EN_COMMUNITY,
-  ...EN_SPONSOR,
   ...EN_MEMORY,
   ...EN_METRICS,
   ...EN_FIND,

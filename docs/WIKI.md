@@ -95,7 +95,8 @@ graph TD
    `studio` 时 GitHub Actions 自动执行。
 
 `main-v2`（1.x 历史）、`website`（上游官网）、`star-history`（上游图表资产）
-这些分支只是版本线/资产分支，**不是**测试分支，你的 CI 不依赖它们。
+这些分支只是上游的版本线/资产分支，**不是**测试分支，你的 CI 不依赖它们，
+本 fork 也不保留它们的副本——需要时从上游 `esengine/DeepSeek-Reasonix` 拉取即可。
 
 ### 保留的 7 个 workflow
 

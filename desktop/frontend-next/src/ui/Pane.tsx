@@ -87,6 +87,7 @@ import { useConversationFiles } from "./useConversationFiles";
 import { NewAnswerAnchor } from "./NewAnswerLine";
 import { useFrozenNewAnswerAnchor } from "./newAnswerMark";
 import { onNewAnswerMarkerChange, sessionKey, showsNewAnswerMarker, useUnreadSince } from "../state/newAnswers";
+import { setAgentDeckOpen, setAgentsRail, useAgentDeckOpen } from "./agentRail";
 
 export type { PaneReport };
 
@@ -334,37 +335,11 @@ function PaneView({ port, hub, rt, title, active, visible, sideHost, side, onFoc
   const paired = useMemo(() => pairCheckpoints(s.items, checkpoints), [s.revision, checkpoints]);
   const rail = useMemo(() => railOf(s.items, s.executions, s.subagentPhase), [s.revision, s.executions, s.subagentPhase]);
   useSubagentNotices(rail.tasks);
-  const [agentDeckOpen, setAgentDeckOpen] = useState(false);
-  const agentFloatBox = useRef<HTMLDivElement>(null);
+  const agentDeckOpen = useAgentDeckOpen();
   useEffect(() => {
-    if (rail.tasks.length === 0) return;
-    window.dispatchEvent(new CustomEvent("studio:agents-rail", { detail: { live: rail.tasks.filter((x) => x.running).length, total: agentsIn(rail.tasks) } }));
-  }, [rail.tasks]);
-  useEffect(() => {
-    const toggle = () => setAgentDeckOpen((on) => !on);
-    window.addEventListener("studio:agents-rail-open", toggle);
-    return () => window.removeEventListener("studio:agents-rail-open", toggle);
-  }, []);
-  useEffect(() => {
-    if (!agentDeckOpen) return;
-    const away = (e: MouseEvent) => {
-      const t = e.target as Element | null;
-      if (agentFloatBox.current?.contains(t)) return;
-      if (t?.closest?.('[data-action="agentrail.badge"]')) return; // the badge toggles it
-      setAgentDeckOpen(false);
-    };
-    const esc = (e: KeyboardEvent) => {
-      if (e.key !== "Escape") return;
-      e.stopPropagation();
-      setAgentDeckOpen(false);
-    };
-    document.addEventListener("mousedown", away);
-    document.addEventListener("keydown", esc);
-    return () => {
-      document.removeEventListener("mousedown", away);
-      document.removeEventListener("keydown", esc);
-    };
-  }, [agentDeckOpen]);
+    if (!active || rail.tasks.length === 0) return;
+    setAgentsRail({ live: rail.tasks.filter((x) => x.running).length, total: agentsIn(rail.tasks) });
+  }, [active, rail.tasks]);
 
   const [clearedJobs, setClearedJobs] = useState<ReadonlySet<string>>(() => new Set());
   const jobs = useMemo(() => {
@@ -567,11 +542,17 @@ function PaneView({ port, hub, rt, title, active, visible, sideHost, side, onFoc
       <div className="worktree-stage-host" ref={setWorktreeTarget} hidden={tab !== "flow" || !worktreePhase}/>
 
       {agentDeckOpen && rail.tasks.length > 0 && createPortal(
-        <div className="agentrail-float" ref={agentFloatBox}>
-          <AgentDeck
-            tasks={rail.tasks}
-            onOpen={(taskId) => { const call = rail.tasks.find((x) => x.id === taskId)?.tool.id; if (call) void openRun(call).catch(notify); }}
-          />
+        <div
+          className="agentrail-scrim"
+          data-action="agentrail.dismiss"
+          onClick={(e) => { if (e.target === e.currentTarget) setAgentDeckOpen(false); }}
+        >
+          <div className="agentrail-float">
+            <AgentDeck
+              tasks={rail.tasks}
+              onOpen={(taskId) => { const call = rail.tasks.find((x) => x.id === taskId)?.tool.id; if (call) void openRun(call).catch(notify); }}
+            />
+          </div>
         </div>,
         document.body,
       )}

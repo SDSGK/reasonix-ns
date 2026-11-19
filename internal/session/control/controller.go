@@ -12,7 +12,6 @@ package control
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"log/slog"
 	"os"
@@ -211,26 +210,6 @@ type Controller struct {
 	settings settingsState
 }
 
-type approvalReply struct {
-	allow   bool
-	session bool
-	persist bool // true = write "always allow" rule to config
-}
-
-type pendingApproval struct {
-	id           string
-	tool         string
-	subject      string
-	reason       string
-	rawInput     json.RawMessage
-	fresh        bool
-	requireHuman bool
-	autoDrain    bool
-	kind         string // tool | plan | recovery; empty = tool
-	recovery     *event.RecoveryApproval
-	reply        chan approvalReply
-}
-
 type plannerSessionResetter interface {
 	ResetPlannerSession()
 }
@@ -364,6 +343,9 @@ type Options struct {
 	Jobs *jobs.Manager
 	// Subagents reads the runs the delegation tools persist; nil lists none.
 	Subagents SubagentReader
+	// SubagentRunner continues one of those runs with another turn; nil
+	// leaves continuation unavailable in this session.
+	SubagentRunner SubagentRunner
 	// TaskStore remains a FileStore-compatible authority. Desktop injects one
 	// observed instance so recorder and task-control APIs share post-commit
 	// projection hints; nil preserves the ordinary FileStore.

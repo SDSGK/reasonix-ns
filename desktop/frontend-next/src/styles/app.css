@@ -175,6 +175,9 @@
 
   .crumb .crumbsep { color: var(--ghost); }
   .crumb b { font-weight: var(--w-reg); color: var(--text); }
+  .crumb .crumb-agent { color: var(--label-agent); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .crumb .crumb-back { flex: none; padding: 1px 7px; border: 1px solid var(--hair); border-radius: var(--r-pill); background: var(--surface); color: var(--muted); font: var(--w-reg) var(--fs-micro) var(--ui); }
+  .crumb .crumb-back:hover { color: var(--text); border-color: var(--border); }
 
   .crumb-proj {
     font-weight: var(--w-med); color: var(--muted);

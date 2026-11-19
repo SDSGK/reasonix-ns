@@ -102,7 +102,7 @@ describe("the version panel", () => {
     const link = await screen.findByRole("link", { name: "下载完整安装包" });
     const notPrevented = fireEvent.click(link);
     expect(notPrevented).toBe(false);
-    expect(openExternal).toHaveBeenCalledWith("https://github.com/esengine/DeepSeek-Reasonix/releases/tag/studio-v2.21.0");
+    expect(openExternal).toHaveBeenCalledWith("https://github.com/SDSGK/reasonix-ns/releases/tag/studio-v2.21.0");
   });
 
   it("explains a move that did not land by its code, with the way out", async () => {
@@ -110,7 +110,7 @@ describe("the version panel", () => {
     render(<Versions port={port} />);
     expect(await screen.findByText("上次更新到 2.21.0 没有生效")).toBeTruthy();
     const link = screen.getByRole("link", { name: "下载完整安装包" });
-    expect(link.getAttribute("href")).toBe("https://github.com/esengine/DeepSeek-Reasonix/releases/tag/studio-v2.21.0");
+    expect(link.getAttribute("href")).toBe("https://github.com/SDSGK/reasonix-ns/releases/tag/studio-v2.21.0");
     expect(screen.getByText("update: set aside app.exe: access denied")).toBeTruthy();
   });
 });

@@ -1,6 +1,7 @@
 package serve
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -15,12 +16,14 @@ import (
 
 type subagentSource struct {
 	control.SessionAPI
-	runs    []delegation.RunInfo
-	page    delegation.RunTranscript
-	err     error
-	gotRef  string
-	gotFrom int
-	gotMax  int
+	runs     []delegation.RunInfo
+	page     delegation.RunTranscript
+	err      error
+	gotRef   string
+	gotFrom  int
+	gotMax   int
+	gotInput string
+	turn     control.SubagentTurn
 }
 
 func (c *subagentSource) SubagentRuns() ([]delegation.RunInfo, error) { return c.runs, c.err }
@@ -28,6 +31,14 @@ func (c *subagentSource) SubagentRuns() ([]delegation.RunInfo, error) { return c
 func (c *subagentSource) SubagentTranscript(ref string, after, limit int) (delegation.RunTranscript, error) {
 	c.gotRef, c.gotFrom, c.gotMax = ref, after, limit
 	return c.page, c.err
+}
+
+func (c *subagentSource) SubagentContinue(_ context.Context, ref, input string) (control.SubagentTurn, error) {
+	c.gotRef, c.gotInput = ref, input
+	if c.err != nil {
+		return control.SubagentTurn{}, c.err
+	}
+	return c.turn, nil
 }
 
 func subagentMux(src *subagentSource) *http.ServeMux {

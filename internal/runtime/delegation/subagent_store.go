@@ -44,6 +44,12 @@ type SubagentSpec struct {
 	// ResumedFrom and UpstreamFrom feed the context capsule only.
 	ResumedFrom  string
 	UpstreamFrom []string
+	// ReadOnly records the boundary the run actually ran under, so a later
+	// round on the same transcript inherits it instead of widening it.
+	ReadOnly bool
+	// Tools is the tool whitelist the run was given, so a later round builds
+	// the same tool surface rather than the default one.
+	Tools []string
 }
 
 // SubagentRun is a prepared transcript run. Call Release exactly once.
@@ -290,6 +296,62 @@ func (s *SubagentStore) PrepareFresh(spec SubagentSpec) (*SubagentRun, error) {
 	now := time.Now().UTC()
 	meta := metaFromSpec(ref, sessionstore.SubagentRunning, now, now, spec)
 	return &SubagentRun{Ref: ref, Session: sessionstore.NewSession(spec.SystemPrompt), Meta: meta, store: s, release: release}, nil
+}
+
+// PrepareContinuation reopens a finished run for another round: the same
+// reference, the same transcript file, and the identity the first round left
+// behind. Only the round is new — the parent session keeps reading the answer
+// from the reference it already holds.
+func (s *SubagentStore) PrepareContinuation(ref, parentSession, workspaceRoot string) (*SubagentRun, error) {
+	if s == nil {
+		return nil, fmt.Errorf("subagent transcript store is required")
+	}
+	ref = strings.TrimSpace(ref)
+	if !sessionstore.ValidSubagentRef(ref) {
+		return nil, ErrSubagentNotFound
+	}
+	meta, err := s.LoadMeta(ref)
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return nil, ErrSubagentNotFound
+		}
+		return nil, err
+	}
+	meta.Ref = ref
+	if err := s.checkOwner(ref, meta, parentSession, workspaceRoot); err != nil {
+		return nil, err
+	}
+	release, err := s.lock(ref)
+	if err != nil {
+		return nil, err
+	}
+	sess, err := sessionstore.LoadSession(s.sessionPath(ref))
+	if err != nil {
+		release()
+		return nil, fmt.Errorf("load subagent transcript %q: %w", ref, err)
+	}
+	return &SubagentRun{Ref: ref, Session: sess, Meta: meta, store: s, release: release}, nil
+}
+
+// Describe reports one run of this conversation: the run's identity and where
+// it stands. A run of another conversation is refused.
+func (s *SubagentStore) Describe(ref, parentSession, workspaceRoot string) (RunInfo, error) {
+	ref = strings.TrimSpace(ref)
+	if !sessionstore.ValidSubagentRef(ref) {
+		return RunInfo{}, ErrSubagentNotFound
+	}
+	meta, err := s.LoadMeta(ref)
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return RunInfo{}, ErrSubagentNotFound
+		}
+		return RunInfo{}, err
+	}
+	meta.Ref = ref
+	if err := s.checkOwner(ref, meta, parentSession, workspaceRoot); err != nil {
+		return RunInfo{}, err
+	}
+	return s.infoOf(meta), nil
 }
 
 func (s *SubagentStore) MarkRunning(run *SubagentRun) error {

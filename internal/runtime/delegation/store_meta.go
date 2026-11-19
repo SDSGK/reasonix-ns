@@ -45,6 +45,10 @@ func metaFromSpec(ref string, status sessionstore.SubagentStatus, created, updat
 		Effort:           capsule.Effort,
 		Capsule:          capsule,
 		CapsuleHash:      capsule.Hash(),
+		// The boundary and the tool whitelist travel with the record, so a
+		// later round on this transcript inherits them instead of guessing.
+		ReadOnly: spec.ReadOnly,
+		Tools:    append([]string(nil), spec.Tools...),
 	}
 }
 

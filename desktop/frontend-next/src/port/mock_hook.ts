@@ -1,6 +1,6 @@
 import { MockMcp } from "./mock_mcp";
 import { HttpError, type HookCatalog, type HookDryRun, type HookEntry } from "./port";
-import type { SubagentRun, SubagentTranscript } from "./subagent";
+import type { SubagentRun, SubagentTranscript, SubagentTurn } from "./subagent";
 import type { ProcessEntry } from "./process";
 
 // Hooks, and what a dry run of one reports back.
@@ -23,6 +23,10 @@ export class MockHook extends MockMcp {
   }
 
   async subagentTranscript(_ref: string): Promise<SubagentTranscript> {
+    throw new HttpError(404, "no sub-agent run answers to that reference", { code: "subagent.not_found" });
+  }
+
+  async subagentContinue(_ref: string, _input: string): Promise<SubagentTurn> {
     throw new HttpError(404, "no sub-agent run answers to that reference", { code: "subagent.not_found" });
   }
 

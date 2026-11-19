@@ -5,3 +5,9 @@
 .agentrun-hd .rt { margin-left: auto; flex: none; font: var(--w-reg) var(--fs-meta) var(--mono); color: var(--faint); }
 .agentrun[data-state="running"] .agentrun-hd .rt { color: var(--net); }
 .agentrun > .scroll { flex: 1; min-height: 0; overflow-y: auto; }
+.agentrun-note { flex: none; margin: 0; padding: 8px 14px; border-top: 1px solid var(--hair); color: var(--faint); font: var(--w-reg) var(--fs-meta)/1.5 var(--ui); }
+.agentrun-note button { margin-left: 10px; }
+.agentrun-reply { flex: none; display: flex; align-items: flex-end; gap: 8px; padding: 10px 14px 12px; border-top: 1px solid var(--hair); background: var(--surface); }
+.agentrun-reply textarea { flex: 1; min-width: 0; min-height: 44px; max-height: 30vh; padding: 7px 9px; border: 1px solid var(--border); border-radius: var(--r-sm); background: var(--page); color: var(--text); font: var(--w-reg) var(--fs-ui)/1.55 var(--ui); resize: vertical; }
+.agentrun-reply textarea::placeholder { color: var(--ghost); }
+.agentrun-reply .btn { flex: none; }

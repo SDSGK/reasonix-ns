@@ -1,12 +1,14 @@
 package serve
 
 import (
+	"encoding/json"
 	"errors"
 	"net/http"
 	"strconv"
 
 	"reasonix/internal/contract/provider"
 	"reasonix/internal/runtime/delegation"
+	"reasonix/internal/session/control"
 )
 
 const (
@@ -17,6 +19,7 @@ const (
 func (s *Server) registerSubagentRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("GET /subagents", s.subagentRuns)
 	mux.HandleFunc("GET /subagents/{ref}/transcript", s.subagentTranscript)
+	mux.HandleFunc("POST /subagents/{ref}/submit", s.subagentSubmit)
 }
 
 type subagentRunView struct {
@@ -39,6 +42,15 @@ type subagentTranscriptView struct {
 	Next     int              `json:"next"`
 	Total    int              `json:"total"`
 	Live     bool             `json:"live"`
+}
+
+// subagentContinueView is one continued turn: the answer the sub-agent gave
+// and the files it touched on the way there.
+type subagentContinueView struct {
+	Ref    string   `json:"ref"`
+	Answer string   `json:"answer"`
+	Read   []string `json:"read,omitempty"`
+	Wrote  []string `json:"wrote,omitempty"`
 }
 
 func subagentRunOf(r delegation.RunInfo) subagentRunView {
@@ -86,12 +98,34 @@ func (s *Server) subagentTranscript(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, subagentTranscriptView{Run: subagentRunOf(page.Info), Messages: shown, After: page.After, Next: page.Next, Total: page.Total, Live: page.Live})
 }
 
+// subagentSubmit sends one more message to a sub-agent run and waits for its
+// answer. The run keeps its reference and its transcript, so the later answer
+// is read from the same place the first one was read from — the parent
+// session's read of that run sees it without asking again.
+func (s *Server) subagentSubmit(w http.ResponseWriter, r *http.Request) {
+	var body struct {
+		Input string `json:"input"`
+	}
+	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 64<<10)).Decode(&body); err != nil {
+		refuse(w, http.StatusBadRequest, "subagent.bad_request", "body must be {input: string}", nil)
+		return
+	}
+	turn, err := s.ctl().SubagentContinue(r.Context(), r.PathValue("ref"), body.Input)
+	if err != nil {
+		refuseSubagent(w, err)
+		return
+	}
+	writeJSON(w, subagentContinueView{Ref: turn.Ref, Answer: turn.Answer, Read: turn.Read, Wrote: turn.Wrote})
+}
+
 func refuseSubagent(w http.ResponseWriter, err error) {
 	switch {
 	case errors.Is(err, delegation.ErrSubagentNotFound):
 		refuse(w, http.StatusNotFound, "subagent.not_found", err.Error(), nil)
 	case errors.Is(err, delegation.ErrSubagentNotOwned):
 		refuse(w, http.StatusForbidden, "subagent.not_owned", err.Error(), nil)
+	case errors.Is(err, control.ErrTurnRunning):
+		busy(w, "subagent.busy", "the session is busy — wait for the current turn to finish", nil)
 	default:
 		refuse(w, http.StatusInternalServerError, "subagent.read_failed", err.Error(), map[string]any{"detail": err.Error()})
 	}

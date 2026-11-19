@@ -53,6 +53,10 @@ type RunSpec struct {
 	MaxSteps     int
 	Index        int
 	ReadOnly     bool
+	// Ref continues the run it names: the same reference, the same
+	// transcript, one more turn. The child keeps the boundary, the tools and
+	// the model its first round had, so a continuation can only narrow.
+	Ref string
 }
 
 type RunOutput struct {
@@ -96,27 +100,59 @@ func (r *Runner) Run(ctx context.Context, spec RunSpec) (RunOutput, error) {
 		return RunOutput{}, fmt.Errorf("sub-agents cannot start more sub-agents here (max_subagent_depth=%d)", r.MaxDepth)
 	}
 	ctx = agent.BindTaskImages(ctx, spec.Task)
+
+	// A continuation keeps the run it names: the same reference, the same
+	// transcript, and the boundary the first round ran under. The reference
+	// is what the parent session already holds, so the later answer is read
+	// from the same place the first one was.
+	var cont *SubagentRun
+	readOnly := spec.ReadOnly || agent.PlanModeFromContext(ctx)
+	tools := spec.Tools
+	if spec.Ref != "" {
+		resumed, err := r.Store.PrepareContinuation(spec.Ref, agent.ParentSession(ctx), r.WorkspaceRoot)
+		if err != nil {
+			return RunOutput{}, err
+		}
+		cont = resumed
+		// The boundary the first round ran under, and the parent's mode now:
+		// a continuation may narrow what its own transcript allowed, never
+		// widen it.
+		readOnly = resumed.Meta.ReadOnly || agent.PlanModeFromContext(ctx)
+		tools = resumed.Meta.Tools
+		spec.Model, spec.Effort = resumed.Meta.Model, resumed.Meta.Effort
+	}
+
 	prov, price, window, modelRef, effortRef, err := r.runtimeFor(ctx, spec)
+	if err != nil && spec.Ref != "" {
+		// The model the first round ran under may be gone; the conversation
+		// continues on the provider the parent is using now.
+		spec.Model, spec.Effort = "", ""
+		prov, price, window, modelRef, effortRef, err = r.runtimeFor(ctx, spec)
+	}
 	if err != nil {
 		return RunOutput{}, fmt.Errorf("sub-agent model: %w", err)
 	}
-	readOnly := spec.ReadOnly || agent.PlanModeFromContext(ctx)
 	var subReg *tool.Registry
 	if readOnly {
-		names := spec.Tools
-		if len(names) == 0 {
-			names = subagentBaseTools
+		if len(tools) == 0 {
+			tools = subagentBaseTools
 		}
-		subReg = agent.ReadOnlySubagentToolRegistryForDepthWithRuntime(r.Registry, names, childDepth, r.MaxDepth, r.CapRuntime)
+		subReg = agent.ReadOnlySubagentToolRegistryForDepthWithRuntime(r.Registry, tools, childDepth, r.MaxDepth, r.CapRuntime)
 	} else {
-		subReg = agent.SubagentToolRegistryForDepthWithRuntime(r.Registry, baseTools(spec.Tools), childDepth, r.MaxDepth, r.CapRuntime)
+		tools = baseTools(tools)
+		subReg = agent.SubagentToolRegistryForDepthWithRuntime(r.Registry, tools, childDepth, r.MaxDepth, r.CapRuntime)
 	}
 	if subReg.Len() == 0 {
 		return RunOutput{}, fmt.Errorf("sub-agent has no tools available")
 	}
 	system := firstNonEmpty(spec.SystemPrompt, r.SystemPrompt)
 	system = agent.ChildCompositionPrompt(ctx, system)
-	run, err := r.prepare(ctx, spec, system, subReg, modelRef, effortRef)
+	var run *SubagentRun
+	if cont != nil {
+		run = cont
+	} else {
+		run, err = r.prepare(ctx, spec, system, subReg, modelRef, effortRef, readOnly, tools)
+	}
 	if err != nil {
 		return RunOutput{}, err
 	}
@@ -148,7 +184,15 @@ func (r *Runner) Run(ctx context.Context, spec RunSpec) (RunOutput, error) {
 	return RunOutput{Ref: run.Ref, Answer: answer, Read: read, Wrote: wrote}, nil
 }
 
-func (r *Runner) prepare(ctx context.Context, spec RunSpec, system string, subReg *tool.Registry, modelRef, effortRef string) (*SubagentRun, error) {
+// Continue runs one more turn of the run ref names: the same transcript, the
+// same boundary the first round ran under, one more answer. The run keeps its
+// reference, so the parent session reads the later answer from the place the
+// first one was read from.
+func (r *Runner) Continue(ctx context.Context, ref, task string) (RunOutput, error) {
+	return r.Run(ctx, RunSpec{Task: task, Kind: "task", Name: ref, Ref: ref})
+}
+
+func (r *Runner) prepare(ctx context.Context, spec RunSpec, system string, subReg *tool.Registry, modelRef, effortRef string, readOnly bool, tools []string) (*SubagentRun, error) {
 	parentSession := strings.TrimSpace(agent.ParentSession(ctx))
 	if r.Store == nil || parentSession == "" {
 		return EphemeralSubagentRun(system), nil
@@ -171,6 +215,8 @@ func (r *Runner) prepare(ctx context.Context, spec RunSpec, system string, subRe
 		ToolContext:      childToolIdentityContext(ctx),
 		Model:            model,
 		Effort:           effort,
+		ReadOnly:         readOnly,
+		Tools:            append([]string(nil), tools...),
 	})
 }
 

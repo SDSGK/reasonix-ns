@@ -65,6 +65,12 @@ type SubagentMeta struct {
 	// stable identity for comparing two runs.
 	Capsule     ContextCapsule `json:"capsule"`
 	CapsuleHash string         `json:"capsuleHash"`
+	// ReadOnly is the boundary the run actually ran under, so a later round
+	// on the same transcript inherits it instead of widening it.
+	ReadOnly bool `json:"readOnly,omitempty"`
+	// Tools is the tool whitelist the run was given, so a later round builds
+	// the same tool surface rather than the default one.
+	Tools []string `json:"tools,omitempty"`
 }
 
 // SubagentMetaDecodeError distinguishes malformed metadata content from file

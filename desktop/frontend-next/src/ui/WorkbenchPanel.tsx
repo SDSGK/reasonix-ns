@@ -2,6 +2,7 @@ import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, type
 import { t } from "../i18n";
 import { reason } from "../i18n/kernel";
 import { host } from "../port/host";
+import { useAgentCrumbSurface } from "./agentCrumb";
 import type {
   AgentPort,
   BrowserTab,
@@ -455,6 +456,9 @@ export function WorkbenchPanel({
   };
   const { close: closeTabs, closing, closeFailure } = useTabClose({ port, surfaces, selected, showFiles: showFiles || launcher, setBrowsers, setOpenFiles, setAgents, setDismissed, setSelected, setLauncher, onCloseManual, onCloseSelected: () => setFailed("") });
   const close = (targets: Surface[]) => { supersede(); return terminals.guard(targets, closeTabs); };
+  // The sub-agent the reader is inside, named in the chrome's breadcrumb; the
+  // way back closes the tab it was showing.
+  useAgentCrumbSurface(active, shown && !launcher, close);
   const dismissTabMenu = useCallback(() => setTabMenu(null), []);
   const [tabMenu, setTabMenu] = useState<{ surface: Surface; x: number; y: number; anchor: HTMLElement } | null>(null);
   const pages = surfaces.filter((s) => s.kind !== "file");

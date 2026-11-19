@@ -1,7 +1,7 @@
 import type { ChangeDiff, StageRequest, WorkspaceBranches, WorkspaceChanges, WorkspaceGit } from "./port";
 import type { DiscardRequest, GitCommitFiles, GitHistory, GitRepos, PushPlan, PushRequest, PushResult } from "./workspace";
 import type { JobOutput, ToolOutputPage } from "./session";
-import type { SubagentRun, SubagentTranscript } from "./subagent";
+import type { SubagentRun, SubagentTranscript, SubagentTurn } from "./subagent";
 import type { ProcessEntry } from "./process";
 import { SseFeedback } from "./sse_feedback";
 import { host } from "./host";
@@ -89,6 +89,9 @@ export class SseWorkspace extends SseFeedback {
   subagentTranscript(ref: string, after = 0, limit = 0) {
     const query = [after ? `after=${after}` : "", limit ? `limit=${limit}` : ""].filter(Boolean).join("&");
     return this.get<SubagentTranscript>("/subagents/" + encodeURIComponent(ref) + "/transcript" + (query ? "?" + query : ""));
+  }
+  subagentContinue(ref: string, input: string) {
+    return this.post0<SubagentTurn>("/subagents/" + encodeURIComponent(ref) + "/submit", { input });
   }
   cancelJob(jobId: string) {
     return this.post("/jobs/" + encodeURIComponent(jobId) + "/cancel");

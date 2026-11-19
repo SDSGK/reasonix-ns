@@ -4,13 +4,13 @@ on:
   # Docs/release-notes/root-Markdown changes carry no analyzable code; the
   # weekly cron keeps the full scan cadence regardless.
   push:
-    branches: ["main-v2", "studio"]
+    branches: ["studio"]
     paths-ignore:
       - 'docs/**'
       - 'release-notes/**'
       - '*.md'
   pull_request:
-    branches: ["main-v2", "studio"]
+    branches: ["studio"]
     paths-ignore:
       - 'docs/**'
       - 'release-notes/**'
@@ -34,7 +34,7 @@ jobs:
       matrix:
         language: [go, javascript-typescript, actions]
         # Empty means "the ref this event is about"; a scheduled run names each line.
-        branch: ${{ fromJSON(github.event_name == 'schedule' && '["main-v2", "studio"]' || '[""]') }}
+        branch: ${{ fromJSON(github.event_name == 'schedule' && '["studio"]' || '[""]') }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:

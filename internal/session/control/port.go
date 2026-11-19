@@ -445,10 +445,12 @@ type PeerMail interface {
 }
 
 // SubagentView reads the sub-agent runs of the session: the ones it spawned,
-// running or finished, and any one run's conversation.
+// running or finished, and any one run's conversation. It also continues one
+// run: the same transcript, one more turn.
 type SubagentView interface {
 	SubagentRuns() ([]delegation.RunInfo, error)
 	SubagentTranscript(ref string, after, limit int) (delegation.RunTranscript, error)
+	SubagentContinue(ctx context.Context, ref, input string) (SubagentTurn, error)
 }
 
 // ProcessView reads what the session has running now, across owners.

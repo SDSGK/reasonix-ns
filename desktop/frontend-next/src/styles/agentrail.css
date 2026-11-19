@@ -4,46 +4,53 @@
    through a portal at the viewport level (fixed), so it never participates
    in the pane's layout. */
 
-
 .agentrail-badge {
   display: inline-flex;
   align-items: center;
   gap: 6px;
   margin-left: 10px;
   padding: 2px 8px;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   border: 0;
   background: transparent;
-  color: inherit;
+  /* The crumb row's own colour is not readable on the chrome's own surface, so
+     the badge names its own: the theme's text colour, which the contrast
+     guard checks against whatever sits behind it. */
+  color: var(--text);
   font: inherit;
-  font-size: 12px;
   cursor: pointer;
 }
 
 .agentrail-badge:hover {
-  background: var(--hover, #ffffff14);
+  background: var(--overlay);
 }
 
 .agentrail-badge b {
-  font-weight: 600;
+  font-weight: var(--w-semi);
 }
 
 .agentrail-live {
-  color: var(--accent, #4493f8);
-  font-weight: 600;
+  color: var(--accent);
+  font-weight: var(--w-semi);
+}
+
+.agentrail-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-end;
+  padding: calc(var(--chrome-h, 45px) + 6px) 16px 0;
 }
 
 .agentrail-float {
-  position: fixed;
-  top: calc(var(--chrome-h, 45px) + 6px);
-  right: 16px;
-  z-index: 60;
   width: min(560px, 92%);
-  border: 1px solid color-mix(in srgb, var(--text) 12%, transparent);
-  border-radius: 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
   background: var(--surface);
   color: var(--text);
-  box-shadow: 0 10px 30px #00000040;
+  box-shadow: 0 10px 30px var(--shadow);
   overflow: hidden;
 }
 
@@ -52,13 +59,9 @@
   overflow: auto;
 }
 
-.agent-deck-tok,
-.agentrail-float .agent-deck-tok {
-  opacity: 0.65;
+.agentrail-tok,
+.agent-deck-tok {
+  color: var(--muted);
   font-variant-numeric: tabular-nums;
   margin-right: 6px;
-}
-
-.agentrail-float .agent-deck-state {
-  font-size: 11px;
 }
