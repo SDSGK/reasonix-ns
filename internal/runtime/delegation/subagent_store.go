@@ -184,6 +184,8 @@ func (s *SubagentStore) CleanupStaleRunning() (int, error) {
 		refs        []string
 	}
 	parents := map[string]*staleParent{}
+	now := time.Now().UTC()
+	cleaned := 0
 	for _, entry := range entries {
 		if entry.IsDir() || !strings.HasSuffix(entry.Name(), ".meta.json") {
 			continue
@@ -206,6 +208,21 @@ func (s *SubagentStore) CleanupStaleRunning() (int, error) {
 		if meta.Status != sessionstore.SubagentRunning {
 			continue
 		}
+		// A run marked running before this process began belongs to an earlier
+		// one: its executor is gone, so nothing is behind it and no parent can
+		// finish it. The cleanup below judges only the parent, and a parent that
+		// is still alive would keep this child forever — a window would then
+		// poll a run that can never answer. Marking it here is safe whatever
+		// the parent does: the run owns nothing a parent could complete.
+		if meta.UpdatedAt.Before(processStarted) {
+			meta.Status = sessionstore.SubagentInterrupted
+			meta.UpdatedAt = now
+			if err := s.saveMeta(meta); err != nil {
+				return 0, err
+			}
+			cleaned++
+			continue
+		}
 		parentSession := strings.TrimSpace(meta.ParentSession)
 		sessionPath, ok := s.parentSessionPath(parentSession)
 		if !ok {
@@ -223,8 +240,6 @@ func (s *SubagentStore) CleanupStaleRunning() (int, error) {
 
 	parentIDs := slices.Sorted(maps.Keys(parents))
 
-	now := time.Now().UTC()
-	cleaned := 0
 	for _, parentID := range parentIDs {
 		parent := parents[parentID]
 		if s.parentSessionProbe != nil && s.parentSessionProbe(parent.sessionPath) {
@@ -298,10 +313,29 @@ func (s *SubagentStore) PrepareFresh(spec SubagentSpec) (*SubagentRun, error) {
 	return &SubagentRun{Ref: ref, Session: sessionstore.NewSession(spec.SystemPrompt), Meta: meta, store: s, release: release}, nil
 }
 
-// PrepareContinuation reopens a finished run for another round: the same
-// reference, the same transcript file, and the identity the first round left
-// behind. Only the round is new — the parent session keeps reading the answer
-// from the reference it already holds.
+var (
+	// ErrSubagentFinished says the run named is over: it cannot be talked to
+	// any more. A run that is still working can be steered; one that has ended
+	// cannot, because the round that would carry the message is over.
+	ErrSubagentFinished = errors.New("that sub-agent run has finished")
+	// ErrSubagentBusy says the run named is being worked on right now, in this
+	// process: it holds the run, so a second round cannot open it.
+	ErrSubagentBusy = errors.New("that sub-agent run is already running")
+)
+
+// processStarted is when this process began. A run marked running before it
+// belongs to an earlier process: its executor is gone, and nothing a parent
+// does can finish it for them.
+var processStarted = time.Now().UTC()
+
+// PrepareContinuation reopens a run for another round: the same reference,
+// the same transcript file, and the identity the first round left behind.
+// Only the round is new — the parent session keeps reading the answer from
+// the reference it already holds.
+//
+// Only a run that is still working may be reopened. A run that has ended is
+// refused: its transcript is closed, and a message sent to it now would have
+// nowhere to land.
 func (s *SubagentStore) PrepareContinuation(ref, parentSession, workspaceRoot string) (*SubagentRun, error) {
 	if s == nil {
 		return nil, fmt.Errorf("subagent transcript store is required")
@@ -320,6 +354,12 @@ func (s *SubagentStore) PrepareContinuation(ref, parentSession, workspaceRoot st
 	meta.Ref = ref
 	if err := s.checkOwner(ref, meta, parentSession, workspaceRoot); err != nil {
 		return nil, err
+	}
+	// The record says whether the run is still working. A run this process
+	// executes now says running; a finished one says so, and a run whose owner
+	// was lost says interrupted — none of which can take another round.
+	if meta.Status != sessionstore.SubagentRunning {
+		return nil, fmt.Errorf("%w: subagent run %q is %s", ErrSubagentFinished, ref, meta.Status)
 	}
 	release, err := s.lock(ref)
 	if err != nil {
@@ -438,7 +478,7 @@ func (s *SubagentStore) lock(ref string) (func(), error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if s.locked[ref] {
-		return nil, fmt.Errorf("subagent reference %q is already running; retry after it finishes", ref)
+		return nil, fmt.Errorf("%w: subagent reference %q; retry after it finishes", ErrSubagentBusy, ref)
 	}
 	s.locked[ref] = true
 	return func() {
