@@ -480,8 +480,23 @@ func interruptedRead(err error, idle time.Duration, stalled bool) error {
 
 // watchIdle closes the body when nothing has arrived for idle, so a silent
 // connection ends as a timeout rather than holding the turn open.
+// firstByteTimeout is how long a model call may take before it emits its first
+// byte. The model may be prefilling a large context before it says anything,
+// and that silence is not a stall: the idle window describes a connection
+// that went quiet mid-stream, which is what it is for. Without this a big
+// context is interrupted on every attempt and retried into the same wall.
+const firstByteTimeout = 15 * time.Minute
+
+// watchIdle guards a stream that has gone quiet. The first byte is waited for
+// with firstByteTimeout, which is longer than the idle window; once the stream
+// has spoken, the idle window applies, because from then on silence means the
+// connection died.
 func watchIdle(ctx context.Context, body io.Closer, idle time.Duration, activity, done <-chan struct{}, stalled *atomic.Bool) {
-	timer := time.NewTimer(idle)
+	wait := firstByteTimeout
+	if idle > wait {
+		wait = idle
+	}
+	timer := time.NewTimer(wait)
 	defer timer.Stop()
 	for {
 		select {
@@ -497,6 +512,8 @@ func watchIdle(ctx context.Context, body io.Closer, idle time.Duration, activity
 				default:
 				}
 			}
+			// The stream has spoken: from here the idle window is the stall
+			// that was written for.
 			timer.Reset(idle)
 		case <-timer.C:
 			stalled.Store(true)
