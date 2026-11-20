@@ -148,3 +148,7 @@ this native smoke; successful builds do not establish native shortcut behavior.
 Packaging runs through electron-builder; `release-studio.yml` drives it on all
 three platforms. Linux ships a `.deb` because that is what makes Studio
 self-updating there. See `docs/STUDIO_RELEASE.md`.
+
+A macOS bundle no Apple certificate signed is signed ad-hoc, which the machine
+accepts and Apple does not notarize. `scripts/install-studio-macos.sh` installs
+such a bundle and clears the quarantine a download leaves on it.

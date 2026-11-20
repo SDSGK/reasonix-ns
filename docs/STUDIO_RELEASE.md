@@ -300,7 +300,7 @@ Studio and 1.x signing jobs and smoke tests share the concurrency group `certum-
 | Name | Kind | Used by |
 | --- | --- | --- |
 | `MINISIGN_PRIVATE_KEY`, `MINISIGN_PASSWORD` | secret | **required**: the detached signature on every published artifact, verified by the updater against the public key compiled into `internal/platform/update/verify.go`. Without them a release cannot be signed, so it cannot be published |
-| `APPLE_CERT_P12`, `APPLE_CERT_PASSWORD`, `APPLE_API_KEY_P8`, `APPLE_API_KEY_ID`, `APPLE_API_ISSUER_ID` | secret | optional: macOS Developer ID signing and notarization. All five or none. Without them the bundle is ad-hoc signed, the release body says so, and the macOS self-update stays off |
+| `APPLE_CERT_P12`, `APPLE_CERT_PASSWORD`, `APPLE_API_KEY_P8`, `APPLE_API_KEY_ID`, `APPLE_API_ISSUER_ID` | secret | optional: macOS Developer ID signing and notarization. All five or none. Without them the bundle is ad-hoc signed — bare, because an ad-hoc signature cannot carry the hardened runtime flag or a restricted entitlement — the release body says so, and the macOS self-update stays off. Installing such a bundle takes `scripts/install-studio-macos.sh`, which clears the quarantine a download leaves on it |
 | `CERTUM_USERNAME`, `CERTUM_OTP_URI`, `CERTUM_KEY_ID` | repository secret | optional: Windows Authenticode signing (section 7), off until `STUDIO_SIGNING_ENABLED` is true |
 | `NPM_TOKEN`, `HOMEBREW_TAP_TOKEN`, `RELEASE_TAG_TOKEN` | repository secret | optional: the CLI channels, off until `STUDIO_PUBLISHES_CLI` is true |
 | `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_ACCOUNT_ID`, `R2_BUCKET` | secret | optional: the object-storage mirror and the delta chunks, off until `STUDIO_PUBLISH_MIRROR` is true |

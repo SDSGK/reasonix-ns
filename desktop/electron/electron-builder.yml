@@ -34,6 +34,11 @@ electronLanguages:
 artifactBuildCompleted: ./packaging/record-artifact-arch.js
 afterAllArtifactBuild: ./packaging/canonical-artifact-names.js
 
+# The macOS bundle carries a signature the machine can check. Without one the
+# installer says the app is damaged, and clearing the quarantine does not
+# answer that.
+afterSign: ./packaging/mac-signing.js
+
 # The shell only. The kernel and the SPA are resources rather than app files:
 # a binary inside app.asar cannot be spawned, and the SPA is read off disk.
 files:

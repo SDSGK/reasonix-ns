@@ -13,6 +13,11 @@
   question, and the answer is to sign it, not to widen what the main process
   will load. Re-add it only against evidence: a launch failure naming library
   validation, not a spawn failure.
+
+  A certificate-signed release only. An ad-hoc signature cannot carry the
+  hardened runtime flag or a restricted entitlement: AMFI answers -423 and the
+  process leaves without a window. packaging/mac-signing.js therefore signs a
+  bundle no certificate signed bare, without this file.
 -->
 <plist version="1.0">
 <dict>
