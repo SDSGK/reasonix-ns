@@ -120,18 +120,21 @@ export function PlanFold({ plan, goal, goalStatus, goalRuntime, shown, running, 
       )}
       {mounted && (
         <div className="studio-todo-body" ref={list} data-closing={leaving ? "" : undefined}>
-          <div className="studio-todo-head">
+          {/* The head holds the title, and the title is what a person clicks to
+              open the list, so it is what they click to close it again. The
+              buttons inside it keep their own meaning. */}
+          <div className="studio-todo-head" data-action="plan.fold" onClick={put}>
             {moving && plan.length > 0 ? <RMark className="plan-spin" /> : goalOnly && <StudioIcon name="target" />}
             <b>{title}</b>
             {status}
             {onJump && plan.length > 0 && (
               <button type="button" className="studio-todo-jump" data-action="plan.jump"
-                onClick={() => { setOpen(false); onJump(); }}>
+                onClick={(e) => { e.stopPropagation(); setOpen(false); onJump(); }}>
                 {t("plan.strip.jump")}
               </button>
             )}
             <button type="button" className="studio-todo-close" data-action="plan.collapse" aria-label={t("plan.strip.collapse")} title={t("plan.strip.collapse")}
-              onClick={put}>
+              onClick={(e) => { e.stopPropagation(); put(); }}>
               <StudioIcon name="down" />
             </button>
           </div>

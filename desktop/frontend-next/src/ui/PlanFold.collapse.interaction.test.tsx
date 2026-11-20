@@ -31,8 +31,18 @@ describe("putting the open plan away", () => {
     expect(screen.getByRole("button", { expanded: false })).toBeTruthy();
   });
 
-  it("closes the list on Escape and returns focus to the bar", async () => {
+  it("closes the list from its head, the same place that opened it", async () => {
     render(<PlanFold plan={plan} shown />);
+    const bar = screen.getByRole("button", { expanded: false });
+    await userEvent.click(bar);
+    const head = document.querySelector(".studio-todo-head");
+    expect(head).not.toBeNull();
+    await userEvent.click(head!);
+    expect(screen.queryByRole("button", { name: "收起计划" })).toBeNull();
+    expect(screen.getByRole("button", { expanded: false })).toBe(bar);
+  });
+
+  it("closes the list on Escape and returns focus to the bar", async () => {    render(<PlanFold plan={plan} shown />);
     const bar = screen.getByRole("button", { expanded: false });
     await userEvent.click(bar);
     expect(bar.getAttribute("aria-expanded")).toBe("true");
