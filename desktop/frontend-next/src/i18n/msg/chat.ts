@@ -548,4 +548,14 @@ export const CHAT: Messages = {
   "chat.earlier_folded_into_digest": { zh: "较早的内容已归档", en: "Earlier content archived" },
   "chat.compaction_auto": { zh: "自动", en: "Auto" },
   "chat.compaction_manual": { zh: "手动", en: "Manual" },
+  // What a tool row says while the model works on it. The rows are read in
+  // every language the interface speaks, so these carry no literal of their
+  // own: a hard-coded Chinese line would stay Chinese in an English window.
+  "chat.working.plan": { zh: "正在写计划…", en: "Writing a plan…" },
+  "chat.working.net": { zh: "正在联网…", en: "Going online…" },
+  "chat.working.deleg": { zh: "正在派活…", en: "Delegating…" },
+  "chat.working.bash": { zh: "正在执行…", en: "Running…" },
+  "chat.working.write": { zh: "正在改写…", en: "Writing…" },
+  "chat.working.mem": { zh: "正在写入记忆…", en: "Remembering…" },
+  "chat.working.mcp": { zh: "正在调 MCP…", en: "Calling an MCP server…" },
 };
