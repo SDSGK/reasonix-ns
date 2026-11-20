@@ -12,6 +12,7 @@ const { parse, readActs, start } = require("../src/host.js");
 const { contextTemplate, editMenuTemplate, applicationMenuTemplate, menuInstaller } = require("../src/editmenu.js");
 const { textContextTemplate, textContextMenuHandler } = require("../src/textcontextmenu.js");
 const { uiLanguage } = require("../src/uilang.js");
+const { runningCount, quitWithRunningText } = require("../src/quitguard.js");
 const { externalTarget } = require("../src/links.js");
 const { offerCleanup, ownBundle } = require("../src/legacy.js");
 const { stripPackageGrants, readReport, unpaintedWindowCause } = require("../src/packagegrants.js");
@@ -3947,4 +3948,21 @@ test("the installer's by-name fallback for a process it cannot read the path of 
   assert.ok(listed.includes("${APP_EXECUTABLE_FILENAME}"), "the app's own executable is matched by name");
   assert.ok(listed.includes("reasonix-studio-host.exe"), "the shell's own host is matched by name");
   assert.ok(!listed.includes("cua-driver.exe"), "other computer-use apps ship the same driver name, so a path-less one is not ours");
+});
+
+test("the quit guard counts the work that would lose its owner, and an unreadable pane counts", () => {
+  assert.equal(runningCount(null), 0);
+  assert.equal(runningCount({ panes: 0, unknown: 0 }), 0);
+  assert.equal(runningCount({ panes: 2, unknown: 0 }), 2);
+  assert.equal(runningCount({ panes: 1, unknown: 3 }), 4, "a pane that cannot answer is neither idle nor finished");
+  assert.equal(runningCount({ panes: -1, unknown: "x" }), 0, "a count that is not one is no count");
+});
+
+test("the quit guard asks in the interface's language, and staying is what the question offers first", () => {
+  const zh = quitWithRunningText("zh", 2);
+  const en = quitWithRunningText("en", 2);
+  assert.ok(zh.message.includes("2") && en.message.includes("2"), "the number of jobs is in the question");
+  assert.notEqual(zh.message, en.message, "the question is asked in the interface's language");
+  assert.notEqual(zh.stay, en.stay, "each language names its own buttons");
+  assert.ok(zh.stay && zh.leave && en.stay && en.leave, "the question offers staying and leaving");
 });

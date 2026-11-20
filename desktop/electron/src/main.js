@@ -17,6 +17,7 @@ const { watchLauncher, consoleEcho } = require("./launcher");
 const { installApplicationMenu, installContextMenu } = require("./menu");
 const { textContextMenuHandler } = require("./textcontextmenu");
 const { uiLanguage } = require("./uilang");
+const { runningCount, quitWithRunningText } = require("./quitguard");
 const { installFullScreenKey } = require("./fullscreen");
 const { installReload } = require("./reload");
 const { externalTarget } = require("./links");
@@ -316,6 +317,32 @@ function onWindowClose(event) {
   if (quitting || !tray?.prefs()?.closeToTray) return;
   event.preventDefault();
   win.hide();
+  // The window is already gone by the time the question is asked; a person who
+  // stays gets it back.
+  void (async () => {
+    if (await confirmQuitWithRunningWork()) return;
+    showWindow();
+  })();
+}
+
+// A window that closes while work is still running leaves that work without an
+// owner: a background job writes its result back into the session that started
+// it, and that session goes with the window. The job then reads as "state
+// unknown" and nobody sees what it produced. So the close asks first.
+async function confirmQuitWithRunningWork() {
+  const running = await client.trayRunning();
+  const count = runningCount(running);
+  if (count <= 0) return true;
+  const text = quitWithRunningText(uiLang(), count);
+  const { response } = await dialog.showMessageBox(win, {
+    type: "warning",
+    message: text.message,
+    detail: text.detail,
+    buttons: [text.stay, text.leave],
+    defaultId: 0,
+    cancelId: 0,
+  });
+  return response === 1;
 }
 
 // showWindow brings it back from wherever it went. Show alone is a no-op on a
@@ -629,7 +656,19 @@ app.on("window-all-closed", () => {
 module.exports = { current: () => ({ win, tray, client, origin }) };
 
 const drainCua = createQuitGate(() => cua, () => app.quit(), error => logs.shell.line(`CUA cleanup: ${error.message}`));
+
+// Quitting is asked for as well: the same work loses its owner the same way.
+let quitConfirmed = false;
 app.on("before-quit", event => {
+  if (!quitConfirmed) {
+    event.preventDefault();
+    void (async () => {
+      if (!(await confirmQuitWithRunningWork())) return;
+      quitConfirmed = true;
+      app.quit();
+    })();
+    return;
+  }
   quitting = true;
   windowShortcut?.close();
   logs.shell.line("shell: quitting");
