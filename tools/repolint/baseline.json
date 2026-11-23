@@ -13,7 +13,7 @@
     "doc-prose": 1427,
     "error-text": 9,
     "essay": 2550,
-    "file-size": 18053,
+    "file-size": 18054,
     "flat-view": 0,
     "frontend-parity": 13,
     "function-size": 2413,
@@ -1496,7 +1496,7 @@
     },
     "internal/tools/jobs/jobs.go": {
       "essay": 35,
-      "file-size": 996
+      "file-size": 997
     },
     "internal/tools/jobs/jobs_extra_test.go": {
       "essay": 1
