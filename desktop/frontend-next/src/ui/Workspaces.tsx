@@ -36,6 +36,8 @@ import { useWorkspaceDrag } from "./useWorkspaceDrag";
 import { SessionTail } from "./SessionAge";
 import { SessionArchiveAction, SessionMoreAction, SessionPinAction } from "./SessionRowActions";
 import { useSessionMutation, type SessionMutation } from "./useSessionMutation";
+import { projectColorCss, useProjectIcons } from "./projectIcon";
+import { ProjectIconPanel } from "./workspaces_projecticon";
 
 const parentOf = (root: string) => root.replace(/[/\\]+$/, "").split(/[/\\]/).slice(-2, -1)[0] ?? "";
 
@@ -106,6 +108,8 @@ function WorkspacesView({ hub, tree, treeRead, answered = null, runtimes, active
   // goes back to it once the question is gone, or a keyboard is left nowhere.
   const askedByKey = useRef("");
   const needle = useRailQuery();
+  // Every project's own mark, read from this machine's store.
+  const marks = useProjectIcons();
   useEffect(() => { setSelection((current) => current === null ? null : new Set()); }, [needle, scope]);
   const toggleSelection = (path: string) => setSelection((current) => {
     if (!current) return current;
@@ -119,6 +123,9 @@ function WorkspacesView({ hub, tree, treeRead, answered = null, runtimes, active
   const hideLegacy = useSyncExternalStore(onHidesLegacySessionsChange, hidesLegacySessions, hidesLegacySessions);
   const quickActions = useSyncExternalStore(onSessionQuickActionsChange, showsSessionQuickActions, showsSessionQuickActions);
   const [sessionMenu, setSessionMenu] = useState("");
+  // Whether the menu is showing the panel that gives a project its own icon
+  // and colour. It opens inside the menu, so it needs no position of its own.
+  const [iconPanel, setIconPanel] = useState(false);
   const order = useSessionMove(hub, reload, onError, !!needle);
   const moveTo = useSessionMoveTo(hub, tree, reload, rowLabel, () => adder.add());
   const [sessionMenuAt, setSessionMenuAt] = useState({ x: 0, y: 0 });
@@ -128,9 +135,13 @@ function WorkspacesView({ hub, tree, treeRead, answered = null, runtimes, active
   const dismissMenu = () => {
     if (menuTrigger.current?.dataset.target === sessionMenu) menuTrigger.current.focus();
     setSessionMenu("");
+    setIconPanel(false);
   };
   const openRowMenu = (root: string, trigger: HTMLElement, at?: { x: number; y: number }) => {
     menuTrigger.current = trigger;
+    // Each project's menu opens with the panel shut: the panel belongs to the
+    // project whose menu is open, not to the last one that was.
+    setIconPanel(false);
     const anchor = trigger.getBoundingClientRect();
     setSessionMenuAt(at ?? { x: anchor.right + 8, y: anchor.top - 7 });
     setSessionMenu(root);
@@ -382,6 +393,7 @@ function WorkspacesView({ hub, tree, treeRead, answered = null, runtimes, active
             const visible = visibleSessions(ws);
             const hidden = ws.sessions.length - visible.length;
             const shut = hasChildren && !needle && folded.has(ws.root);
+            const mark = marks[ws.root];
             // Only while the question is on screen: panesOf walks every runtime.
             const doomed = confirm === ws.root ? panesOf(ws.root) : [];
             const busyPanes = liveIds(doomed).length;
@@ -435,7 +447,7 @@ function WorkspacesView({ hub, tree, treeRead, answered = null, runtimes, active
                       openRowMenu(ws.root, ev.currentTarget);
                     }}
                   >
-                    <WsMark open={hasChildren ? !shut : undefined} />
+                    <WsMark open={hasChildren ? !shut : undefined} icon={mark?.icon} color={projectColorCss(mark?.color)} />
                     <span className="wsname ds-title" title={ws.root}>
                       {ws.name}
                     </span>
@@ -492,6 +504,7 @@ function WorkspacesView({ hub, tree, treeRead, answered = null, runtimes, active
                         {ws.remembered && <WorkspaceOrder root={ws.root} position={tree.filter((w) => w.remembered).findIndex((w) => w.root === ws.root)} total={tree.filter((w) => w.remembered).length}
                           hub={hub} reload={reload} dismiss={dismissMenu} onError={onError} />}
                         <ProjectMenuExtras canSelect={displayed.length > 0} selecting={selection !== null} onSelect={() => { selectFrom.current = ws.root; setSelection(new Set()); }} dismiss={dismissMenu} />
+                        <ProjectIconPanel root={ws.root} mark={mark} iconPanel={iconPanel} setIconPanel={setIconPanel} />
                         <div className="session-pop-group">
                           <button className="danger" role="menuitem" data-action="workspace.remove" onClick={() => { setConfirm(ws.root); dismissMenu(); }}>
                             <StudioIcon name="close" /><span>{t("common.remove_from_the_list")}</span><small>{t("common.keeps_files")}</small>
