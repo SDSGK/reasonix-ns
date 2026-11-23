@@ -1,10 +1,11 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { t } from "../i18n";
 import { StudioIcon } from "./StudioIcon";
 import { reason } from "../i18n/kernel";
 import type { AgentPort, ApprovalMode, SessionStatus } from "../port/port";
 import { useDismiss } from "./dismiss";
 import { APPROVALS, approvalName } from "./approvals";
+import { ALLOW_ALL, AllowAllConfirm, applyMode } from "./allowAll";
 
 // Permission is one boundary, not a catch-all for every way a turn can run.
 // Work strategy and model effort live in their own controls beside this one.
@@ -19,8 +20,16 @@ export function Policy({ port, status, onChanged, onBoundary }: Props) {
   const [open, setOpen] = useState(false);
   const [asking, setAsking] = useState("");
   const [refused, setRefused] = useState("");
+  // 「全部放行」asks first: it is the one choice that takes the sandbox down
+  // with it, and that is not visible afterwards.
+  const [confirming, setConfirming] = useState(false);
   const wrap = useRef<HTMLDivElement>(null);
   useDismiss(open, wrap, () => setOpen(false));
+  // 菜单收起时那句确认也该收起来：它问的是菜单里的那一档，菜单不在了，
+  // 问的就没有对象了。
+  useEffect(() => {
+    if (!open) setConfirming(false);
+  }, [open]);
 
   if (!status) return null;
 
@@ -28,9 +37,25 @@ export function Policy({ port, status, onChanged, onBoundary }: Props) {
   const label = approvalName(apv);
   const apply = (value: ApprovalMode) => {
     if (asking) return;
+    if (value === ALLOW_ALL) {
+      setConfirming(true);
+      return;
+    }
+    // 选了别的档位，那句「全部放行」的确认就该收起来：它问的是这一档，
+    // 而这一档已经不是要选的那一档了。
+    setConfirming(false);
     setAsking(value);
     setRefused("");
-    port.setApprovalMode(value)
+    applyMode(port, value)
+      .then(onChanged)
+      .catch((e: unknown) => setRefused(reason(e)))
+      .finally(() => setAsking(""));
+  };
+  const allowAll = () => {
+    setConfirming(false);
+    setAsking(ALLOW_ALL);
+    setRefused("");
+    applyMode(port, ALLOW_ALL)
       .then(onChanged)
       .catch((e: unknown) => setRefused(reason(e)))
       .finally(() => setAsking(""));
@@ -62,6 +87,7 @@ export function Policy({ port, status, onChanged, onBoundary }: Props) {
       <div className="menu modemenu polmenu composer-menu" role="group" aria-label={t("safety.execution_permissions")} hidden={!open}>
         <div className="studio-policy-head"><b>{t("safety.execution_permissions")}</b><small>{t("common.current_task")}</small></div>
         <div className="studio-policy-primary">
+          {confirming && <AllowAllConfirm onGo={allowAll} onCancel={() => setConfirming(false)} />}
           {APPROVALS.map(([value, name, note]) => (
             <div key={value}>
               {value === "yolo" && <div className="studio-policy-risk">{t("common.high_risk")}</div>}

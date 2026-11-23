@@ -55,7 +55,7 @@ describe("execution permission changes", () => {
     const call = deferred<void>();
     const { open, option, container, onChanged } = draw({ setApprovalMode: () => call.promise });
     await open();
-    await userEvent.click(option("全部放行"));
+    await userEvent.click(option("自动批准"));
     call.fail(new HttpError(409, "a turn is running", { code: "busy.switch_model" }));
     await waitFor(() => expect(container.querySelector('[role="alert"]')).toBeTruthy());
     expect(option("询问").getAttribute("aria-pressed")).toBe("true");
@@ -65,7 +65,7 @@ describe("execution permission changes", () => {
   it("refreshes status after the kernel accepts the choice", async () => {
     const { open, option, onChanged } = draw();
     await open();
-    await userEvent.click(option("不询问"));
+    await userEvent.click(option("自动批准"));
     await waitFor(() => expect(onChanged).toHaveBeenCalledTimes(1));
   });
 });

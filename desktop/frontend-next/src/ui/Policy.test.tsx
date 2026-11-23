@@ -62,7 +62,8 @@ describe("execution permission control", () => {
     draw();
     await userEvent.click(screen.getByRole("button", { name: "执行权限：询问" }));
     const group = screen.getByRole("group", { name: "执行权限" });
-    expect(group.textContent).toMatch(/不询问.*询问.*自动批准.*全部放行/s);
+    expect(group.textContent).toMatch(/询问.*自动批准.*全部放行/s);
+    expect(group.textContent).not.toMatch(/不询问/);
     expect(group.textContent).not.toMatch(/高级执行设置|均衡|交付|思考强度/);
   });
 

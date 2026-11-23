@@ -52,8 +52,8 @@ describe("what a deviation is allowed to cost the shelf", () => {
     ["delivery", "high", "ask", "交付 · High"],
     ["balanced", "auto", "auto", "自动批准"],
     ["balanced", "auto", "dontAsk", "不询问"],
-    ["balanced", "auto", "yolo", "全部放行"],
-    ["delivery", "high", "yolo", "交付 · High · 全部放行"],
+    ["balanced", "auto", "yolo", "全部放行（打破沙箱）"],
+    ["delivery", "high", "yolo", "交付 · High · 全部放行（打破沙箱）"],
   ] as [Preset, string, ApprovalMode, string][])("reads %s/%s/%s as %s", (p, e, m, want) => {
     expect(shelf(at(p, e, m))).toBe(want);
   });
@@ -78,7 +78,7 @@ describe("the two postures that must never be quiet", () => {
   // forget they are in, and forgetting it is what costs a workspace.
   it("keeps a fully-permitted session visible and toned", () => {
     const s = at("balanced", "auto", "yolo");
-    expect(s.ready && s.approval).toBe("全部放行");
+    expect(s.ready && s.approval).toBe("全部放行（打破沙箱）");
     expect(s.ready && s.danger).toBe(true);
   });
 

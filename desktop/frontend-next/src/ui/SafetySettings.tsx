@@ -1,6 +1,8 @@
+import { useState } from "react";
 import { t } from "../i18n";
 import type { AgentPort, ApprovalMode } from "../port/port";
 import { APPROVALS, approvalNote } from "./approvals";
+import { ALLOW_ALL, AllowAllConfirm } from "./allowAll";
 import { BrowserTools } from "./BrowserTools";
 import { ExternalOrigin } from "./ExternalOrigin";
 import { Group } from "./Group";
@@ -22,13 +24,32 @@ interface Props {
 }
 
 export function SafetySettings({ port, mode, busy, onMode, onChanged }: Props) {
+  // 「全部放行」takes the sandbox down with it, so it is asked about first
+  // rather than after the commands are already out of the jail.
+  const [confirming, setConfirming] = useState(false);
+  const pick = (next: ApprovalMode) => {
+    if (next === ALLOW_ALL) {
+      setConfirming(true);
+      return;
+    }
+    // 选了别的档位，那句「全部放行」的确认就该收起来：它问的是这一档，
+    // 而这一档已经不是要选的那一档了。
+    setConfirming(false);
+    onMode(next);
+  };
   return (
     <>
       <SectionCard title={t("settings.approval")}>
         <SettingRow id="approval" title={t("settings.tool_approvals")} desc={t("safety.ask_before_writing_or_running")}>
           <SegChoice label={t("settings.tool_approvals")} value={mode as ApprovalMode} action="tool-approval.mode" disabled={!!busy}
-            onPick={onMode} options={APPROVALS.map(([id, name]) => [id, t(name)] as const)} />
+            onPick={pick} options={APPROVALS.map(([id, name]) => [id, t(name)] as const)} />
         </SettingRow>
+        {confirming && (
+          <AllowAllConfirm
+            onGo={() => { setConfirming(false); onMode(ALLOW_ALL); }}
+            onCancel={() => setConfirming(false)}
+          />
+        )}
         {mode === "yolo" && <p className="note" role="status">{approvalNote(mode)}</p>}
         <Group id="rules" title={t("settings.rules_you_spell_out")} hint={t("safety.allow_and_deny_by_command")}>
           <Rules port={port} onChanged={onChanged} />
