@@ -83,6 +83,7 @@ import { useSubagentNotices } from "./useSubagentNotices";
 import { AgentDeck } from "./AgentDeck";
 import { agentsIn } from "./panels/derive";
 import { RootMissingBanner } from "./RootMissingBanner";
+import { SessionSizeNotice } from "./SessionSizeNotice";
 import { useConversationFiles } from "./useConversationFiles";
 import { NewAnswerAnchor } from "./NewAnswerLine";
 import { useFrozenNewAnswerAnchor } from "./newAnswerMark";
@@ -711,6 +712,7 @@ function PaneView({ port, hub, rt, title, active, visible, sideHost, side, onFoc
             be on screen at once. */}
         <div className="composenotes">
           {failure}
+          <SessionSizeNotice usage={status?.sessionUsage} ctx={ctx} path={status?.sessionPath ?? rt.sessionPath} />
           {s.error && (
             <ErrorBar text={s.error} onDismiss={() => dispatch({ kind: "__error", text: "" } as never)} onReport={onFeedback} />
           )}

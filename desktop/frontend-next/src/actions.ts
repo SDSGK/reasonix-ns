@@ -273,6 +273,7 @@ export const ACTIONS: UIAction[] = [
   { id: "ext.scope-back", kind: "navigation", target: "none", proof: "interaction" },
   { id: "session.import-native-choose", kind: "view", target: "none", proof: "interaction" },
   { id: "session.filter-clear", kind: "view", target: "none", proof: "interaction" },
+  { id: "session.size-advice-dismiss", kind: "view", target: "none", proof: "interaction" },
   { id: "queue.to-steer", kind: "kernel-mutation", target: "entity", proof: "interaction" },
   { id: "steer.withdraw", kind: "kernel-mutation", target: "entity", proof: "interaction" },
 
