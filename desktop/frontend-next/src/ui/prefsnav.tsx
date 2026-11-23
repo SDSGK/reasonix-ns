@@ -270,6 +270,41 @@ export const SETTINGS: SettingEntry[] = [
   { section: "appearance", anchor: "scheme", title: "settings.palette", scope: "machine", apply: "immediate", keywords: ["主题", "theme", "色板", "高级外观", "导入主题", "自定义颜色", "colours"] },
 ];
 
+/** A block, and the regions drawn inside it. */
+export interface NavLeaf {
+  entry: SettingEntry;
+  children: SettingEntry[];
+}
+
+/** The blocks a section holds, in the order the table files them.
+ *
+ *  A section here is the page a block is drawn on, not the one it is filed
+ *  under: the providers page is drawn on the model page, so its blocks are
+ *  listed under 模型 — the same fold the number beside the category used to
+ *  count, so the list and the page agree on what is where.
+ *
+ *  `within` says a block is a region of another one, so it hangs under the
+ *  block that holds it instead of claiming a line of its own. */
+export function leavesOf(section: Section): NavLeaf[] {
+  const own = SETTINGS.filter((e) => !e.hidden && pageHome(e.section) === section);
+  const roots: SettingEntry[] = [];
+  const inside = new Map<string, SettingEntry[]>();
+  for (const e of own) {
+    if (!e.within) {
+      roots.push(e);
+      continue;
+    }
+    const list = inside.get(e.within) ?? [];
+    list.push(e);
+    inside.set(e.within, list);
+  }
+  // A region whose block is not on this page has no block to hang under. It is
+  // a block of its own rather than a thing that quietly disappears.
+  const held = new Set(roots.map((e) => e.anchor));
+  for (const [host, list] of inside) if (!held.has(host)) roots.push(...list);
+  return roots.map((entry) => ({ entry, children: inside.get(entry.anchor) ?? [] }));
+}
+
 export const SETTING_AT = (anchor: string) => SETTINGS.find((s) => s.anchor === anchor);
 
 export const FOLDS_INTO: Partial<Record<Section, Section>> = { providers: "model", remote: "network", memory: "storage", persona: "session", hooks: "ext", peers: "session", usage: "storage", versions: "account" };

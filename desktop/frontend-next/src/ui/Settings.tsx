@@ -25,6 +25,7 @@ import { OpsSettings } from "./OpsSettings";
 import { AccountSettings } from "./AccountSettings";
 import { ConnectSettings } from "./ConnectSettings";
 import { SafetySettings } from "./SafetySettings";
+import { applyMode } from "./allowAll";
 import type { Section } from "./prefsnav";
 import { AddServer } from "./AddServer";
 import type { RemoteHost } from "../port/remote";
@@ -456,7 +457,7 @@ export function Settings({ hub, onError, port, networkPort, localWorkspacePort, 
           {at === "tools" && (
             <>
               <SafetySettings port={port} mode={status?.toolApprovalMode} busy={busy} onChanged={onChanged}
-                onMode={(id) => run(id, () => port.setApprovalMode(id))} />
+                onMode={(id) => run(id, () => applyMode(port, id))} />
               {scope && (
                 <SectionCard title={t("ext.extension_scope")}>
                   <ScopeRow scope={scope} scopes={scopes} onPick={setScopeAt} />

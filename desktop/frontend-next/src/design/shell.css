@@ -39,6 +39,7 @@
 
 .railfoot { flex: none; display: flex; flex-direction: column; gap: 0; padding: 0 10px 10px; border: 0; background: transparent; }
 .railfoot::before { content: ""; display: block; height: 1px; margin: 6px 4px; background: var(--hair); }
+.studio-tools { border-left: 1px solid var(--border); }
 .studio-tools-row { display: flex; align-items: center; min-height: 32px; gap: 2px; }
 .studio-tools-row > button { display: inline-flex; align-items: center; gap: 10px; height: 32px; padding: 0 10px; border: 0; border-radius: var(--r-sm); background: transparent; color: var(--muted); font: var(--w-reg) var(--fs-ui)/1.4 var(--ui); cursor: pointer; }
 .studio-tools-row > .studio-settings { flex: 1; min-width: 0; text-align: left; }
