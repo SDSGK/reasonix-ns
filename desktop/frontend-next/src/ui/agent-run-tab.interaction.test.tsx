@@ -108,6 +108,14 @@ describe("the sub-agent tab's frame", () => {
     expect(screen.queryByRole("button", { name: "停止子代理" })).toBeNull();
   });
 
+  it("says the state beside the stop button while the run is still working", async () => {
+    const { port } = reader([page([say("working", 1)], 0, { live: false, run: run({ parentCall: "call-9" }) })]);
+    Object.assign(port, { stopToolCall: vi.fn(async () => {}) });
+    render(<AgentRunView port={port} run={{ ref: "sa_1", name: "audit" }} shown />);
+    expect(await screen.findByText("运行中")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "停止子代理" })).toBeTruthy();
+  });
+
   it("goes back to the group in the conversation by the spawning call", async () => {
     const { port } = reader([page([say("working", 1)], 0, { live: false, run: run({ parentCall: "call-9", state: "completed" }) })]);
     const onShowCall = vi.fn();

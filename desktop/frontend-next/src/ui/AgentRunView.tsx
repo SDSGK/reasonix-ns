@@ -92,9 +92,10 @@ export function AgentRunView({ port, run, shown, onShowCall }: { port: AgentPort
         <AgentAvatar name={run.name} />
         <span className="who">{run.name}</span>
         {info?.model && <span className="model">{info.model}</span>}
+        {status && <span className="rt">{status}</span>}
         {info?.state === "running" && call && port.stopToolCall ? (
           <button type="button" className="agentrun-stop" data-action="agent.stop" onClick={() => void port.stopToolCall(call).catch(() => {})}>{t("subagent.tab.stop")}</button>
-        ) : status && <span className="rt">{status}</span>}
+        ) : null}
       </div>
       {task && (
         <div className="agentrun-task">
