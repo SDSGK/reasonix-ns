@@ -46,6 +46,9 @@ func (p *scriptedProvider) requestAt(index int) provider.Request {
 
 // A continuation is one more round on the transcript the first round wrote:
 // the same reference, the same file, and a model that sees what came before.
+// Only a run that is still working may be continued — a finished one is
+// refused (see TestAFinishedRunCannotBeContinued) — so the record is put back
+// to work here.
 func TestRunnerContinuesTheSameTranscript(t *testing.T) {
 	store := NewSubagentStore(testenv.TempDir(t))
 	prov := &scriptedProvider{answers: []string{"first answer", "second answer"}}
@@ -68,6 +71,7 @@ func TestRunnerContinuesTheSameTranscript(t *testing.T) {
 	if first.Ref == "" {
 		t.Fatal("the first round must name the run it wrote")
 	}
+	markRunning(t, store, first.Ref)
 
 	second, err := runner.Run(ctx, RunSpec{Task: "follow up", Tools: []string{"read_file"}, Ref: first.Ref})
 	if err != nil {
@@ -102,7 +106,8 @@ func TestRunnerContinuesTheSameTranscript(t *testing.T) {
 }
 
 // A continuation inherits the boundary the first round ran under; it never
-// widens it.
+// widens it. The run is put back to work first: a finished run cannot be
+// continued at all.
 func TestContinuationKeepsTheFirstRoundsBoundary(t *testing.T) {
 	store := NewSubagentStore(testenv.TempDir(t))
 	prov := &scriptedProvider{answers: []string{"read only answer", "still read only"}}
@@ -122,6 +127,7 @@ func TestContinuationKeepsTheFirstRoundsBoundary(t *testing.T) {
 	if err != nil {
 		t.Fatalf("first round: %v", err)
 	}
+	markRunning(t, store, first.Ref)
 	if _, err := runner.Run(ctx, RunSpec{Task: "now write it", Tools: []string{"read_file", "write_file"}, Ref: first.Ref}); err != nil {
 		t.Fatalf("second round: %v", err)
 	}

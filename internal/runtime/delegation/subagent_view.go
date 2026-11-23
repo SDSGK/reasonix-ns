@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"reasonix/internal/base/tokencount"
 	"reasonix/internal/contract/provider"
 	"reasonix/internal/state/sessionstore"
 )
@@ -53,6 +54,10 @@ type RunInfo struct {
 	ParentTurn       string
 	StartedAt        time.Time
 	UpdatedAt        time.Time
+	// Tokens is what the run's conversation weighed, estimated from the
+	// transcript it kept. Zero means the record predates the estimate, or
+	// the run never reached the model.
+	Tokens int
 }
 
 // RunTranscript is one page of a run's conversation: Messages are those from
@@ -116,8 +121,48 @@ func (s *SubagentStore) infoOf(meta sessionstore.SubagentMeta) RunInfo {
 	return RunInfo{
 		Ref: meta.Ref, Name: meta.Name, Kind: meta.Kind, Model: meta.Model, Effort: meta.Effort,
 		State: state, ParentSession: meta.ParentSession, ParentToolCallID: meta.ParentToolCallID, ParentTurn: meta.ParentTurn,
-		StartedAt: meta.CreatedAt, UpdatedAt: meta.UpdatedAt,
+		StartedAt: meta.CreatedAt, UpdatedAt: meta.UpdatedAt, Tokens: meta.Tokens,
 	}
+}
+
+// tokensOf is what the run weighed. A finished run carries the estimate its
+// own record kept; a run this process is executing now has no record yet, so
+// it is counted from the conversation in memory.
+func (s *SubagentStore) tokensOf(meta sessionstore.SubagentMeta) int {
+	if meta.Status == sessionstore.SubagentRunning {
+		if sess := s.liveSession(meta.Ref); sess != nil {
+			return runTokens(sess.Snapshot())
+		}
+	}
+	return meta.Tokens
+}
+
+// runTokens estimates what a run's own conversation cost the provider: a
+// chat-shaped agent re-sends its whole conversation on every model call, so
+// the prompt of the k-th call is everything said before it. It is an estimate
+// and not a bill — there is no tokenizer here — but it is the same measure
+// for every run, which is what a reader comparing two sub-agents needs.
+func runTokens(msgs []provider.Message) int {
+	prompt, output, history := 0, 0, 0
+	for _, m := range msgs {
+		size := messageTokens(m)
+		if m.Role == provider.RoleAssistant {
+			prompt += history
+			output += size
+		}
+		history += size
+	}
+	return prompt + output
+}
+
+// messageTokens is what one message weighs on the wire: its text, its
+// reasoning, and the calls it asked for.
+func messageTokens(m provider.Message) int {
+	n := tokencount.Text(m.Content) + tokencount.Text(m.ReasoningContent)
+	for _, call := range m.ToolCalls {
+		n += tokencount.Text(call.Name) + tokencount.Text(call.Arguments)
+	}
+	return n
 }
 
 // Runs lists the sub-agent runs a conversation spawned, newest first.
@@ -136,7 +181,9 @@ func (s *SubagentStore) Runs(parentSession, workspaceRoot string) ([]RunInfo, er
 		}
 		meta := a.Meta
 		meta.Ref = a.Ref
-		out = append(out, s.infoOf(meta))
+		info := s.infoOf(meta)
+		info.Tokens = s.tokensOf(meta)
+		out = append(out, info)
 	}
 	slices.SortFunc(out, func(a, b RunInfo) int { return b.StartedAt.Compare(a.StartedAt) })
 	return out, nil
@@ -170,7 +217,9 @@ func (s *SubagentStore) LiveRuns(parentSession, workspaceRoot string) ([]RunInfo
 			continue
 		}
 		meta.Ref = ref
-		out = append(out, s.infoOf(meta))
+		info := s.infoOf(meta)
+		info.Tokens = s.tokensOf(meta)
+		out = append(out, info)
 	}
 	slices.SortFunc(out, func(a, b RunInfo) int { return b.StartedAt.Compare(a.StartedAt) })
 	return out, nil

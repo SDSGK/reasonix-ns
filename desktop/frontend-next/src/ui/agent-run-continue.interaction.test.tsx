@@ -38,9 +38,12 @@ function speaker(pages: SubagentTranscript[], turn?: SubagentTurn) {
   return { port, calls, sent };
 }
 
+// Only a run that is still working can be talked to: a run that has ended is
+// refused by the kernel (subagent.not_running) and the view offers no box for
+// it either. These cases therefore read a run that is running.
 describe("talking to a sub-agent from its own view", () => {
   it("sends what was typed to the run it belongs to", async () => {
-    const { port, sent } = speaker([page([say("first", 1)], 0, { live: false, run: run({ state: "completed" }) })]);
+    const { port, sent } = speaker([page([say("first", 1)], 0, { live: false, run: run({ state: "running" }) })]);
     render(<AgentRunView port={port} run={{ ref: "sa_1", name: "audit" }} shown />);
     const box = await screen.findByRole("textbox");
     fireEvent.change(box, { target: { value: "now check the failing test" } });
@@ -50,7 +53,7 @@ describe("talking to a sub-agent from its own view", () => {
   });
 
   it("sends on Enter, and leaves Shift+Enter to the box", async () => {
-    const { port, sent } = speaker([page([say("first", 1)], 0, { live: false, run: run({ state: "completed" }) })]);
+    const { port, sent } = speaker([page([say("first", 1)], 0, { live: false, run: run({ state: "running" }) })]);
     render(<AgentRunView port={port} run={{ ref: "sa_1", name: "audit" }} shown />);
     const box = await screen.findByRole("textbox");
     fireEvent.change(box, { target: { value: "keep going" } });
@@ -65,7 +68,7 @@ describe("talking to a sub-agent from its own view", () => {
   it("reads the answer back from where the last page ended, not from the start", async () => {
     const { port, calls } = speaker([
       page([say("first", 1)], 0),
-      page([say("second", 2)], 1, { live: false, run: run({ state: "completed" }) }),
+      page([say("second", 2)], 1, { live: false, run: run({ state: "running" }) }),
     ]);
     render(<AgentRunView port={port} run={{ ref: "sa_1", name: "audit" }} shown />);
     await screen.findByText(/second/);
@@ -80,7 +83,7 @@ describe("talking to a sub-agent from its own view", () => {
   it("says why the message did not go, and keeps what was typed", async () => {
     const port = {
       workspaceImageURL: () => "",
-      subagentTranscript: vi.fn(async () => page([say("first", 1)], 0, { live: false, run: run({ state: "completed" }) })),
+      subagentTranscript: vi.fn(async () => page([say("first", 1)], 0, { live: false, run: run({ state: "running" }) })),
       subagentContinue: vi.fn(async () => { throw new Error("the session is busy"); }),
     } as unknown as AgentPort;
     render(<AgentRunView port={port} run={{ ref: "sa_1", name: "audit" }} shown />);

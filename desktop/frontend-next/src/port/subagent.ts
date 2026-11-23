@@ -11,11 +11,19 @@ export interface SubagentRun {
   kind: string;
   model: string;
   effort?: string;
+  /** Where the run stands. Only a running one may be talked to: a run that
+   *  has ended is closed, and the kernel refuses a message to it
+   *  (subagent.not_running). */
   state: SubagentState;
   /** The transcript tool call that spawned the run. */
   parentCall?: string;
   startedAt: number;
   updatedAt: number;
+  /** What the run's own conversation weighed, estimated by the kernel from
+   *  the transcript it kept. It is an estimate and not a bill, but it is the
+   *  same measure for every run, so two sub-agents can be compared. Absent
+   *  means the kernel did not count it. */
+  tokens?: number;
 }
 
 /** One page of a run's conversation: GET /subagents/{ref}/transcript. Rows keep

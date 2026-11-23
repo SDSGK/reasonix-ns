@@ -77,8 +77,7 @@ func (r *SubagentRun) Release() {
 // parent session — e.g. headless `reasonix run`, which never mints a session
 // path. Its empty Ref makes the store's MarkRunning/SaveCompleted/SaveFailed
 // methods no-op and keeps FormatSubagentResult from emitting a transcript
-// reference, so the sub-agent behaves exactly as it did before persisted
-// transcripts existed. It holds no lock, so Release is a no-op.
+// reference, so the sub-agent behaves as it did before transcripts existed.
 func EphemeralSubagentRun(systemPrompt string) *SubagentRun {
 	return &SubagentRun{Session: sessionstore.NewSession(systemPrompt)}
 }
@@ -154,9 +153,8 @@ func (s *SubagentStore) CleanupStaleRunning() (int, error) {
 		return 0, nil
 	}
 	// On Windows, os.ReadDir can report ERROR_DIRECTORY as an IsNotExist
-	// error when the store path exists but is a regular file. Check the leaf
-	// first so a malformed store remains a startup error instead of being
-	// mistaken for an absent store.
+	// error when the store path is a regular file. Check the leaf first so a
+	// malformed store stays a startup error instead of an absent store.
 	info, err := os.Stat(s.dir)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -179,12 +177,28 @@ func (s *SubagentStore) CleanupStaleRunning() (int, error) {
 		}
 		return 0, err
 	}
-	type staleParent struct {
-		sessionPath string
-		refs        []string
-	}
-	parents := map[string]*staleParent{}
 	now := time.Now().UTC()
+	parents, cleaned, err := s.collectStaleParents(entries, now)
+	if err != nil {
+		return 0, err
+	}
+	return s.interruptStaleParents(parents, cleaned, now)
+}
+
+// staleParent groups the sub-agent references that share one parent session
+// with the parent transcript whose lease guards them.
+type staleParent struct {
+	sessionPath string
+	refs        []string
+}
+
+// collectStaleParents scans the store's metadata for runs still marked
+// running and groups them by the parent session that owns them. A run marked
+// running before this process began belongs to an earlier one: its executor
+// is gone, so nothing is behind it and no parent can finish it, and it is
+// interrupted here rather than waiting for the parent check.
+func (s *SubagentStore) collectStaleParents(entries []os.DirEntry, now time.Time) (map[string]*staleParent, int, error) {
+	parents := map[string]*staleParent{}
 	cleaned := 0
 	for _, entry := range entries {
 		if entry.IsDir() || !strings.HasSuffix(entry.Name(), ".meta.json") {
@@ -197,28 +211,24 @@ func (s *SubagentStore) CleanupStaleRunning() (int, error) {
 		meta, err := s.LoadMeta(ref)
 		if err != nil {
 			// A corrupt metadata file (truncated write, killed process) must
-			// not abort startup. Skip all content decode failures, including
-			// errors from custom field decoders such as time.Time, while genuine
-			// file I/O errors remain fatal so storage problems stay visible.
+			// not abort startup. Content decode failures are skipped; genuine
+			// file I/O errors stay fatal so storage problems remain visible.
 			if sessionstore.IsSubagentMetaDecodeError(err) {
 				continue
 			}
-			return 0, err
+			return nil, 0, err
 		}
 		if meta.Status != sessionstore.SubagentRunning {
 			continue
 		}
-		// A run marked running before this process began belongs to an earlier
-		// one: its executor is gone, so nothing is behind it and no parent can
-		// finish it. The cleanup below judges only the parent, and a parent that
-		// is still alive would keep this child forever — a window would then
-		// poll a run that can never answer. Marking it here is safe whatever
-		// the parent does: the run owns nothing a parent could complete.
+		// Marking it is safe whatever the parent does: the run owns nothing a
+		// parent could complete. The cleanup below judges only the parent, so
+		// a live one keeps this child forever and a window polls a dead run.
 		if meta.UpdatedAt.Before(processStarted) {
 			meta.Status = sessionstore.SubagentInterrupted
 			meta.UpdatedAt = now
 			if err := s.saveMeta(meta); err != nil {
-				return 0, err
+				return nil, 0, err
 			}
 			cleaned++
 			continue
@@ -237,10 +247,13 @@ func (s *SubagentStore) CleanupStaleRunning() (int, error) {
 		}
 		parent.refs = append(parent.refs, ref)
 	}
+	return parents, cleaned, nil
+}
 
-	parentIDs := slices.Sorted(maps.Keys(parents))
-
-	for _, parentID := range parentIDs {
+// interruptStaleParents marks the runs of every stale parent as interrupted,
+// holding that parent's session lease so a live owner keeps its children.
+func (s *SubagentStore) interruptStaleParents(parents map[string]*staleParent, cleaned int, now time.Time) (int, error) {
+	for _, parentID := range slices.Sorted(maps.Keys(parents)) {
 		parent := parents[parentID]
 		if s.parentSessionProbe != nil && s.parentSessionProbe(parent.sessionPath) {
 			continue
@@ -330,12 +343,9 @@ var processStarted = time.Now().UTC()
 
 // PrepareContinuation reopens a run for another round: the same reference,
 // the same transcript file, and the identity the first round left behind.
-// Only the round is new — the parent session keeps reading the answer from
-// the reference it already holds.
-//
-// Only a run that is still working may be reopened. A run that has ended is
-// refused: its transcript is closed, and a message sent to it now would have
-// nowhere to land.
+// Only the round is new — the parent session still reads the answer from the
+// reference it holds. Only a working run may be reopened: an ended run is
+// refused, its transcript closed, and a message sent to it now has nowhere to land.
 func (s *SubagentStore) PrepareContinuation(ref, parentSession, workspaceRoot string) (*SubagentRun, error) {
 	if s == nil {
 		return nil, fmt.Errorf("subagent transcript store is required")
@@ -424,11 +434,17 @@ func (s *SubagentStore) SaveCompleted(run *SubagentRun) error {
 	meta := run.Meta
 	meta.Status = sessionstore.SubagentCompleted
 	meta.UpdatedAt = time.Now().UTC()
+	// What the run weighed, counted from the conversation it kept: the only
+	// record of its cost that outlives the process.
+	meta.Tokens = runTokens(run.Session.Snapshot())
 	run.Meta = meta
 	return s.saveMeta(meta)
 }
 
 func (s *SubagentStore) SaveFailed(run *SubagentRun) error {
+	// The terminal record keeps what the run weighed too, so a failed run
+	// reads the same as a finished one.
+	run.Meta.Tokens = runTokens(run.Session.Snapshot())
 	return s.saveTerminal(run, sessionstore.SubagentFailed, "")
 }
 
@@ -560,10 +576,9 @@ func (s *SubagentStore) isAncestorSession(ancestor, current string) (bool, error
 			return false, fmt.Errorf("%w: cycle at session %q", errLineageUnproven, cursor)
 		}
 		seen[cursor] = true
-		// Route through parentSessionPath so both the caller-provided id and
-		// every parent id read from disk metadata get the same bare-filename
-		// validation — a raw Join would let "../"-shaped ids escape the
-		// session directory.
+		// Route through parentSessionPath so both the caller-provided id and every
+		// parent id read from disk metadata get the same bare-filename validation —
+		// a raw Join would let "../"-shaped ids escape the session directory.
 		metaPath, valid := s.parentSessionPath(cursor)
 		if !valid {
 			return false, fmt.Errorf("%w: invalid session identifier %q", errLineageUnproven, cursor)

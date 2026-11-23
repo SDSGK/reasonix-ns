@@ -40,6 +40,8 @@ func TestSubagentContinueRefusesABusySessionAndAnUnknownRun(t *testing.T) {
 		code   string
 	}{
 		{control.ErrTurnRunning, http.StatusConflict, "subagent.busy"},
+		{control.ErrSubagentFinished, http.StatusConflict, "subagent.not_running"},
+		{control.ErrSubagentBusy, http.StatusConflict, "subagent.busy"},
 		{errors.New("disk on fire"), http.StatusInternalServerError, "subagent.read_failed"},
 	} {
 		src := &subagentSource{err: tc.err}

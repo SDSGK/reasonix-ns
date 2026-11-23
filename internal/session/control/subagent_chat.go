@@ -7,7 +7,17 @@ import (
 
 	"reasonix/internal/contract/event"
 	"reasonix/internal/runtime/agent"
+	"reasonix/internal/runtime/delegation"
 )
+
+// ErrSubagentFinished is the refusal a run that has ended gives when it is
+// talked to. It is the delegation layer's error, named here so a caller that
+// holds only this package can recognise it.
+var ErrSubagentFinished = delegation.ErrSubagentFinished
+
+// ErrSubagentBusy is the refusal a run that is being worked on right now
+// gives: it holds the run, so a second round cannot open it.
+var ErrSubagentBusy = delegation.ErrSubagentBusy
 
 // SubagentTurn is what one continued turn of a sub-agent produced: the answer
 // it gave and the files it read or wrote on the way there.
@@ -26,9 +36,10 @@ type SubagentRunner interface {
 }
 
 // SubagentContinue runs one more turn of a sub-agent run this session owns.
-// The run keeps its reference and its transcript, so the later answer is read
-// from the same place the first one was read from. The child's boundary is the
-// one its first round ran under — a continuation may narrow it, never widen it.
+// The run keeps its reference and transcript, so the later answer is read
+// where the first one was. The child's boundary is the one its first round
+// ran under: a continuation may narrow it, never widen it. Only a run still
+// working may be talked to; a finished one is refused (ErrSubagentFinished).
 func (c *Controller) SubagentContinue(ctx context.Context, ref, input string) (SubagentTurn, error) {
 	ref = strings.TrimSpace(ref)
 	input = strings.TrimSpace(input)

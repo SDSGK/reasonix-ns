@@ -186,8 +186,8 @@ func (r *Runner) Run(ctx context.Context, spec RunSpec) (RunOutput, error) {
 
 // Continue runs one more turn of the run ref names: the same transcript, the
 // same boundary the first round ran under, one more answer. The run keeps its
-// reference, so the parent session reads the later answer from the place the
-// first one was read from.
+// reference, so the parent session reads the later answer where the first
+// was read from. Only a run that is still working can be continued.
 func (r *Runner) Continue(ctx context.Context, ref, task string) (RunOutput, error) {
 	return r.Run(ctx, RunSpec{Task: task, Kind: "task", Name: ref, Ref: ref})
 }

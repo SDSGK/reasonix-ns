@@ -74,6 +74,10 @@
 .agent-deck-foot > span { flex: 1; }
 .agent-deck-foot .agent-quiet { color: var(--text); font-weight: var(--w-med); }
 
+.agentrail-float .agent-deck-head { padding: 8px 8px 10px; }
+.agentrail-float .agent-deck-row { padding: 8px; }
+.agentrail-float .agent-deck-foot { padding: 8px 8px 6px; }
+
 .agentrun-hd { min-height: 40px; gap: 6px; padding: 0 8px 0 12px; box-sizing: border-box; }
 .agentrun-hd .who { color: var(--text); font: var(--w-med) var(--fs-ui)/1.3 var(--mono); }
 .agentrun-hd .model { font: var(--w-reg) var(--fs-meta)/1.3 var(--ui); color: var(--faint); }

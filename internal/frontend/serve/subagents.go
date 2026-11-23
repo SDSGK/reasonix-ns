@@ -33,6 +33,10 @@ type subagentRunView struct {
 	ParentCall string `json:"parentCall,omitempty"`
 	StartedAt  int64  `json:"startedAt"` // unix milliseconds
 	UpdatedAt  int64  `json:"updatedAt"`
+	// Tokens is what the run's conversation weighed, estimated from the
+	// transcript it kept. It is an estimate and not a bill; it is the same
+	// measure for every run, so two sub-agents can be compared.
+	Tokens int `json:"tokens,omitempty"`
 }
 
 type subagentTranscriptView struct {
@@ -56,7 +60,7 @@ type subagentContinueView struct {
 func subagentRunOf(r delegation.RunInfo) subagentRunView {
 	return subagentRunView{
 		Ref: r.Ref, Name: r.Name, Kind: r.Kind, Model: r.Model, Effort: r.Effort, State: string(r.State), ParentCall: r.ParentToolCallID,
-		StartedAt: r.StartedAt.UnixMilli(), UpdatedAt: r.UpdatedAt.UnixMilli(),
+		StartedAt: r.StartedAt.UnixMilli(), UpdatedAt: r.UpdatedAt.UnixMilli(), Tokens: r.Tokens,
 	}
 }
 
@@ -124,6 +128,13 @@ func refuseSubagent(w http.ResponseWriter, err error) {
 		refuse(w, http.StatusNotFound, "subagent.not_found", err.Error(), nil)
 	case errors.Is(err, delegation.ErrSubagentNotOwned):
 		refuse(w, http.StatusForbidden, "subagent.not_owned", err.Error(), nil)
+	case errors.Is(err, delegation.ErrSubagentFinished):
+		// The run is over, so a message for it has nowhere to land. The
+		// request was well formed: what refuses it is the run's state, which
+		// is what a conflict is for.
+		refuse(w, http.StatusConflict, "subagent.not_running", "that sub-agent run has finished and cannot be talked to", nil)
+	case errors.Is(err, delegation.ErrSubagentBusy):
+		busy(w, "subagent.busy", "that sub-agent run is being worked on right now", nil)
 	case errors.Is(err, control.ErrTurnRunning):
 		busy(w, "subagent.busy", "the session is busy — wait for the current turn to finish", nil)
 	default:

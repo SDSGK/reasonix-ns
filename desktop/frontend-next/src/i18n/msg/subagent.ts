@@ -51,8 +51,11 @@ export const SUBAGENT: Messages = {
   "subagent.tab.back": { zh: "回到对话里那一组", en: "Back to its group in the conversation" },
   "subagent.tab.continue_note": { zh: "这里的消息直接发给这个子代理，它会在自己的记录里接着干。", en: "A message here goes straight to this sub-agent, which carries on in its own record." },
   "subagent.tab.continue_placeholder": { zh: "告诉它接着做什么…", en: "Tell it what to do next…" },
+  "subagent.tab.finished": { zh: "这个子代理已经结束，不能再发消息了", en: "This sub-agent has ended; it cannot be sent another message." },
   "subagent.tab.stop": { zh: "停止子代理", en: "Stop subagent" },
   "subagent.tab.task": { zh: "主会话交给它的任务", en: "Task from the main session" },
+  "subagent.tab.task_collapse": { zh: "收起", en: "Collapse" },
+  "subagent.tab.task_expand": { zh: "展开全部", en: "Expand all" },
   "subagent.the_subagent_took_n_steps": { zh: "子代理做了 {n} 步", en: "the subagent took {n} steps" },
   "subagent.a_sub_agent_that_names": { zh: "没有声明 write_paths 的子代理不再占住整个工作区，只在写某个文件的那一刻占用该路径，所以可以和主会话、其他子代理并发。代价：它的 bash 和 MCP 写入不受路径围栏约束，只在事后观察；两边同时改同一个文件时，后写的一方会被拒绝。默认开启；关闭后为严格模式，没声明范围的子代理会占住整个工作区。", en: "A sub-agent that names no write_paths no longer holds the whole workspace; it holds a path only while it writes that file, so it can run beside the main conversation and other sub-agents. The cost: its bash and MCP writes are not confined by a path fence and are only observed afterwards; if two sides edit the same file at once, the later write is refused. On by default; turning it off gives strict mode, where a sub-agent with no declared scope holds the whole workspace." },
 };

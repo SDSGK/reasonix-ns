@@ -71,6 +71,10 @@ type SubagentMeta struct {
 	// Tools is the tool whitelist the run was given, so a later round builds
 	// the same tool surface rather than the default one.
 	Tools []string `json:"tools,omitempty"`
+	// Tokens is what the run's own conversation weighed (see
+	// delegation.runTokens): an estimate, but the same measure for every run.
+	// Zero means the record predates the estimate.
+	Tokens int `json:"tokens,omitempty"`
 }
 
 // SubagentMetaDecodeError distinguishes malformed metadata content from file

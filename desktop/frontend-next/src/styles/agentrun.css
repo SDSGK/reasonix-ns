@@ -11,3 +11,23 @@
 .agentrun-reply textarea { flex: 1; min-width: 0; min-height: 44px; max-height: 30vh; padding: 7px 9px; border: 1px solid var(--border); border-radius: var(--r-sm); background: var(--page); color: var(--text); font: var(--w-reg) var(--fs-ui)/1.55 var(--ui); resize: vertical; }
 .agentrun-reply textarea::placeholder { color: var(--ghost); }
 .agentrun-reply .btn { flex: none; }
+
+.agentrun-task { position: relative; }
+.agentrun-task > p { max-height: 5.4em; overflow: hidden; }
+.agentrun-task[data-expanded="true"] > p { max-height: 40vh; overflow-y: auto; }
+.agentrun-task[data-long="true"][data-expanded="false"] > p {
+  -webkit-mask-image: linear-gradient(to bottom, #000 66%, transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 66%, transparent 100%);
+}
+.agentrun-task-more {
+  display: inline-flex; align-items: center; gap: 6px; margin-top: 6px; padding: 2px 6px;
+  border: 0; border-radius: var(--r-sm); background: transparent; color: var(--muted);
+  font: var(--w-med) var(--fs-meta)/1.4 var(--ui); cursor: pointer;
+}
+.agentrun-task-more:hover { background: var(--overlay); color: var(--text); }
+.agentrun-task-more:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.agentrun-task-caret {
+  width: 9px; height: 9px; flex: none; border-right: 1.5px solid currentColor; border-bottom: 1.5px solid currentColor;
+  transform: rotate(45deg) translate(-2px, -2px); transition: transform var(--t-line);
+}
+.agentrun-task[data-expanded="true"] .agentrun-task-caret { transform: rotate(-135deg) translate(-2px, -2px); }

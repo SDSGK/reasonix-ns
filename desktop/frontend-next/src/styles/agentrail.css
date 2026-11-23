@@ -40,25 +40,41 @@
   position: fixed;
   inset: 0;
   z-index: 60;
-  display: flex;
-  align-items: flex-start;
-  justify-content: flex-end;
-  padding: calc(var(--chrome-h, 45px) + 6px) 16px 0;
 }
 
 .agentrail-float {
-  width: min(560px, 92%);
-  border: 1px solid var(--line);
-  border-radius: var(--r-lg);
-  background: var(--surface);
+  position: fixed;
+  z-index: 61;
+  box-sizing: border-box;
+  width: min(360px, calc(100vw / var(--zoom, 1) - 32px));
+  padding: 6px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--float);
   color: var(--text);
-  box-shadow: 0 10px 30px var(--shadow);
+  box-shadow: var(--shadow-float);
   overflow: hidden;
+  opacity: 0;
+  transition: opacity var(--m-line);
+}
+
+.agentrail-float[data-placed] {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .agentrail-float { transition: none; }
 }
 
 .agentrail-float .agent-deck {
-  max-height: 46vh;
+  max-height: min(46vh, calc(100dvh / var(--zoom, 1) - 132px));
   overflow: auto;
+  overscroll-behavior: contain;
+}
+
+@media (max-width: 680px) {
+  .agentrail-float { width: calc(100vw / var(--zoom, 1) - 24px); }
+  .agentrail-float .agent-deck { max-height: min(52vh, calc(100dvh / var(--zoom, 1) - 120px)); }
 }
 
 .agentrail-tok,
