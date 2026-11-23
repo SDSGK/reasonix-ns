@@ -42,11 +42,11 @@
       "versions": [
         {
           "version": "0.1.0",
-          "publishTimestamp": 1792315829,
+          "publishTimestamp": 1795068258,
           "source": {
             "type": "git",
             "url": "https://github.com/SDSGK/reasonix-ns",
-            "commit": "79430cf8cf978505a2a8f433e4dc29a6def5e3cf",
+            "commit": "c1e8ad4aefb2e90baf523ba99e6c398853ce06af",
             "path": "integrations/dsh-plugin"
           },
           "engines": {
