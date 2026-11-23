@@ -7,12 +7,12 @@
     "commented-code": 0,
     "complexity": 662,
     "css-important": 127,
-    "css-size": 8851,
+    "css-size": 8897,
     "doc-language": 0,
     "doc-owner": 0,
     "doc-prose": 1427,
     "error-text": 9,
-    "essay": 2554,
+    "essay": 2550,
     "file-size": 18053,
     "flat-view": 0,
     "frontend-parity": 13,
@@ -76,11 +76,11 @@
     },
     "desktop/frontend-next/src/styles/app.css": {
       "css-important": 24,
-      "css-size": 5233
+      "css-size": 5275
     },
     "desktop/frontend-next/src/styles/studio.css": {
       "css-important": 103,
-      "css-size": 3618
+      "css-size": 3622
     },
     "desktop/internal/winuninstall/registry_windows.go": {
       "essay": 1
@@ -1062,9 +1062,6 @@
     "internal/runtime/coordinator/coordinator_test.go": {
       "essay": 3
     },
-    "internal/runtime/delegation/subagent_store.go": {
-      "essay": 4
-    },
     "internal/runtime/guardian/guardian.go": {
       "essay": 23
     },
@@ -1588,6 +1585,9 @@
     "sdk/go/wire.go": {
       "essay": 1
     },
+    "tools/repolint/frontendparity.go": {
+      "frontend-parity": 13
+    },
     "tools/repolint/orphan.go": {
       "essay": 2
     },
@@ -1602,9 +1602,6 @@
     },
     "workers/crash-report/src/index.ts": {
       "file-size": 686
-    },
-    "tools/repolint/frontendparity.go": {
-      "frontend-parity": 13
     }
   }
 }

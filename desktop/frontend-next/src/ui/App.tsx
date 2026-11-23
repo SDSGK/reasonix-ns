@@ -1,4 +1,3 @@
-import { StudioIcon } from "./StudioIcon";
 import { useBranchSession } from "./useBranchSession";
 import { CompositionNewContext } from "./CompositionNewContext";
 import { keepSame } from "./stable";
@@ -55,7 +54,7 @@ import { PaneTabs } from "./PaneTabs";
 import { paneReader } from "../state/paneread";
 import { onShowsSessionTabsChange, showsSessionTabs } from "../state/prefs";
 import { useLiveGrace } from "./useLiveGrace";
-import { isUnread, useViewed, useUnreadBadge } from "./unread";
+import { useViewed, useUnreadBadge } from "./unread";
 import { useFirstRun } from "./useFirstRun";
 import { Welcome } from "./Welcome";
 import { useSessionSwitch } from "./sessionswitch";
@@ -68,6 +67,7 @@ import { useNewConversation } from "./useNewConversation";
 import { markSettled } from "../boot/gate";
 import type { PaneView } from "../state/paneview";
 import { usePaneSessionRefs } from "./usePaneSessionRefs";
+import { PanesEmpty, usePaneTabs } from "./app_panes";
 
 // Start fetching the settings chunk with the shell instead of waiting for the
 // first click. It remains a separate chunk (and keeps its failure boundary),
@@ -81,6 +81,10 @@ const Settings = lazy(async () => {
   if (loaded.error) throw loaded.error;
   return { default: loaded.module!.Settings };
 });
+
+// The window's shortcuts, held back while the opening scene is up: a key
+// pressed to skip it must not also fire whatever that key is bound to.
+const NO_SHORTCUTS: Shortcut[] = [];
 
 const NO_REPORT: PaneReport = {
   status: null,
@@ -281,6 +285,16 @@ export function App({ hub }: { hub: HubPort }) {
     return map;
   }, [hub, runtimes]);
   const activePort = panePorts.get(active) ?? panePorts.values().next().value ?? null;
+  // The opening scene is a cover over the room, not a room of its own: the
+  // window underneath is already live while it plays, so the hand-off from one
+  // to the other is a movement instead of a cut.
+  const cover = welcomed === false ? activePort : null;
+  // The welcome is owed once. The machine is told, and it remembers for the
+  // next launch.
+  const markWelcomed = useCallback(() => {
+    setWelcomed(true);
+    void activePort?.markWelcomed().catch(() => {});
+  }, [activePort]);
   const machinePort = useMemo(() => hub.machinePort(), [hub]);
   const machineRt = runtimes.find((rt) => !rt.host);
   const localRt = runtimes.find((rt) => rt.id === active && !rt.host) ?? machineRt;
@@ -430,7 +444,9 @@ export function App({ hub }: { hub: HubPort }) {
   const stopTurn = useCallback(() => activePort?.cancel(), [activePort]);
   const escMode = useEscStop();
   const [stopArmed, setStopArmed] = useState(false);
-  useWindowKeys(shortcuts, { browser, settings: !!settings, running, confirm: escMode === "confirm", closeBrowser, stop: stopTurn, onArm: setStopArmed });
+  // While the cover is up the window is not yet the room's: its shortcuts wait
+  // for it, or the key that skips the opening would also press a button.
+  useWindowKeys(cover ? NO_SHORTCUTS : shortcuts, { browser, settings: !!settings, running, confirm: escMode === "confirm", closeBrowser, stop: stopTurn, onArm: setStopArmed });
 
   // A setting changed in the pane is a fact about the session behind it, and
   // the pane is what holds that fact. Without a nudge it keeps polling only
@@ -446,36 +462,7 @@ export function App({ hub }: { hub: HubPort }) {
     void reloadPanes();
   }, [activePort, reloadAccount, reloadPanes]);
 
-  // A pane's label comes from the tree row it opened, so the sidebar and the
-  // tab never disagree. An unnamed session gets a number rather than a third
-  // "新会话" — with several open, identical labels are the same as no labels.
-  const titleFor = useCallback(
-    (rt: RuntimeView, at: number) => {
-      for (const ws of rt.host ? viewed.remote[rt.host] ?? [] : tree) {
-        for (const session of ws.sessions) {
-          // An unwritten one has only a file name; the numbered fallback reads better.
-          const held = rt.host ? workspaceContains(ws, rt.root) && session.path === rt.sessionPath : session.runtimeId === rt.id;
-          if (held && (session.title || session.turns)) return session.title || session.name;
-        }
-      }
-      return at === 0 ? t("common.new_session") : t("app.new_session_n", { n: at + 1 });
-    },
-    [tree, viewed.remote],
-  );
-
-  const tabs = useMemo(
-    () =>
-      runtimes.map((rt, i) => ({
-        rt,
-        title: titleFor(rt, i),
-        run: runs[rt.id]?.run ?? "idle",
-        live: runs[rt.id]?.live ?? false,
-        unread: isUnread(rt, viewed.tree, viewed.remote),
-      })),
-    [runtimes, titleFor, runs, viewed.tree, viewed.remote],
-  );
-  // The folder only earns tab space when the panes actually span more than one.
-  const manyRoots = useMemo(() => new Set(runtimes.map((rt) => rt.root)).size > 1, [runtimes]);
+  const { tabs, manyRoots } = usePaneTabs({ runtimes, runs, tree, seenTree: viewed.tree, remote: viewed.remote });
   const activeRuntime = runtimes.find((rt) => rt.id === active);
   // A failed request floats above the composer of the pane in front, where the
   // eye already is; with no pane on screen it takes the main area's corner.
@@ -536,19 +523,6 @@ export function App({ hub }: { hub: HubPort }) {
 
   if (setup === undefined || welcomed === undefined) return <div className="app" data-run="idle" />;
   if (first.gate) return first.gate;
-  if (!welcomed && activePort) {
-    return (
-      <Welcome
-        variant="short"
-        replay
-        onDone={() => {
-          setWelcomed(true);
-          void activePort.markWelcomed().catch(() => {});
-        }}
-      />
-    );
-  }
-
   return (
     <CompositionNewContext.Provider value={(id) => {const rt=runtimes.find((v)=>v.id===active);void (rt?.host?openRemotePane(rt.host,rt.root,undefined,id):openPane({root:newSessionRoot,agentComposition:id})).catch(fail);}}>
     <PeerThreadsProvider port={activePort} hub={hub} onOpen={openPeerSession}>
@@ -562,6 +536,10 @@ export function App({ hub }: { hub: HubPort }) {
       data-apv={report.status?.toolApprovalMode ?? "ask"}
       data-prefs={settings ? "" : undefined}
       data-tabs={runtimes.length > 1 ? "" : undefined}
+      // The room is drawn but not yet in use: the cover is over it, and a
+      // composer that grabs the keyboard behind it would answer a key that
+      // was meant for the opening.
+      inert={cover != null}
       style={{ "--rail-open": `${railW}px`, "--dock-open": `${shownDockW}px` } as CSSProperties}
     >
       {ask && <RemoteAsk ask={ask} onAnswer={answerRemote} />}
@@ -719,22 +697,13 @@ export function App({ hub }: { hub: HubPort }) {
               ) : null;
             })}
             {runtimes.length === 0 && (
-              <div className="panes-empty">
-                <span className="mk" aria-hidden="true"><StudioIcon name="chat" /></span>
-                <p className="t">{t("app.no_session_open")}</p>
-                {!treeRead ? null : tree.length === 0 ? (
-                  <>
-                    <p className="h">{t("app.you_can_start_without_a")}</p>
-                    <button data-action="session.new" onClick={() => void startConversation().catch(fail)}>{t("common.start_a_new_session")}</button>
-                    <button data-action="workspace.add" disabled={adder.busy} onClick={() => adder.add()}>{t("app.add_folder")}</button>
-                  </>
-                ) : (
-                  <>
-                    <p className="h">{t("app.pick_one_on_the_left")}</p>
-                    <button data-action="session.new" onClick={() => void startConversation().catch(fail)}>{t("common.start_a_new_session")}</button>
-                  </>
-                )}
-              </div>
+              <PanesEmpty
+                treeRead={treeRead}
+                treeEmpty={tree.length === 0}
+                addBusy={adder.busy}
+                onNew={() => void startConversation().catch(fail)}
+                onAdd={() => adder.add()}
+              />
             )}
           </div>
 
@@ -790,6 +759,13 @@ export function App({ hub }: { hub: HubPort }) {
       <RailToggle rail={rail} onRail={() => setRail((v) => !v)} />
       <StopHint armed={stopArmed} />
     </div>
+
+    {/* The opening scene, over a room that is already there: it is lifted off
+        the window at the end, and what it uncovers is the room, not a cut to
+        one. */}
+    {cover && (
+      <Welcome variant="short" replay onDone={markWelcomed} />
+    )}
     </PeerThreadsProvider>
     </CompositionNewContext.Provider>
   );

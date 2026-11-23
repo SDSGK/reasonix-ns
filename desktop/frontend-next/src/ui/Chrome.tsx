@@ -4,6 +4,7 @@ import { t } from "../i18n";
 import { host as hostBridge } from "../port/host";
 import { requestLeaveAgent, useAgentCrumb } from "./agentCrumb";
 import { toggleAgentDeck, useAgentsRail } from "./agentRail";
+import { AgentAvatar } from "./cards/SubagentGroup";
 import type { HubPort } from "../port/hub";
 import type { AccountState, AgentPort, SessionStatus, WorkspaceInfo } from "../port/port";
 import { DeviceBar } from "./DeviceBar";
@@ -116,7 +117,12 @@ export function Chrome({ port, status, workspace: ws, title, steer, account, hos
         {crumb && (
           <>
             <span className="crumbsep" aria-hidden="true">/</span>
-            <span className="crumb-agent" title={crumb.name}>{crumb.name}</span>
+            {/* The agent's own mark beside its name: the breadcrumb says which
+                sub-agent the reader is inside, and the mark says it is one. */}
+            <span className="crumb-agent" title={crumb.name}>
+              <AgentAvatar name={crumb.name} />
+              <span className="crumb-agent-name">{crumb.name}</span>
+            </span>
             <button type="button" className="crumb-back" data-action="chrome.leave-agent" onClick={() => requestLeaveAgent(crumb.ref)}>{t("common.back")}</button>
           </>
         )}

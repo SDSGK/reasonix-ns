@@ -890,7 +890,6 @@ body { background: var(--page) !important; }
 [data-fold~="short"] .compose { --aux-budget: min(calc(19vh / var(--zoom, 1)), 150px); } [data-fold~="short"] .compose:has(.queue):not(:has(.composenotes > *)) { --aux-budget: min(calc(28vh / var(--zoom, 1)), 260px); }
 .compose:focus-within { box-shadow: 0 0 0 3px rgb(197 201 192 / .055), 0 20px 48px -32px var(--shade); }
 .compose:focus-within::after { border-color: #4a4e47; }
-.compose .prompt { display: none; }
 .compose .fmain { display: block; }
 .compose textarea { display: block; min-height: 48px; color: var(--text); font-size: var(--fs-lead); line-height: 1.65; }
 @media (pointer: coarse) { .compose textarea { font-size: calc(16px * var(--fs-scale, 1)); } }
@@ -1162,7 +1161,10 @@ body { background: var(--page) !important; }
 }
 .studio-browser :is(.bview, .studio-browser-frame) { margin: 0 6px 6px; width: auto; border-radius: var(--r-sm); overflow: hidden; }
 .workbench-tabs { height: 39px; flex: none; display: flex; align-items: flex-end; gap: 2px; padding: 7px var(--pane-gutter) 0; border-bottom: 1px solid var(--hair); background: var(--page); }
-.workbench-tablist { min-width: 0; display: flex; align-items: flex-end; gap: 2px; overflow-x: auto; scrollbar-width: none; scroll-behavior: smooth; }
+.workbench-tablist { min-width: 0; display: flex; align-items: flex-end; gap: 2px; overflow-x: auto; scrollbar-width: none; }
+.workbench-tablist[data-scroll="start"] { -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 26px), transparent); mask-image: linear-gradient(90deg, #000 calc(100% - 26px), transparent); }
+.workbench-tablist[data-scroll="end"] { -webkit-mask-image: linear-gradient(90deg, transparent, #000 26px); mask-image: linear-gradient(90deg, transparent, #000 26px); }
+.workbench-tablist[data-scroll="mid"] { -webkit-mask-image: linear-gradient(90deg, transparent, #000 26px, #000 calc(100% - 26px), transparent); mask-image: linear-gradient(90deg, transparent, #000 26px, #000 calc(100% - 26px), transparent); }
 .workbench-files {
   flex: none; align-self: center; width: 28px; height: 28px; display: grid; place-items: center;
   border: 0; border-radius: var(--r-sm); background: transparent; color: var(--faint); cursor: pointer;
@@ -1173,12 +1175,14 @@ body { background: var(--page) !important; }
 .workbench-files[aria-pressed="true"] { color: var(--accent); background: var(--overlay); }
 .workbench-new { align-self: center; width: 26px; height: 26px; flex: none; padding: 0; display: grid; place-items: center; border: 0; border-radius: var(--r-sm); background: transparent; color: var(--faint); cursor: pointer; }
 .workbench-new:hover { background: var(--overlay); color: var(--text); }
-.workbench-tab { max-width: 220px; min-width: 72px; height: 32px; margin-bottom: -1px; box-sizing: border-box; flex: 0 1 auto; display: grid; grid-template-columns: minmax(0, 1fr) 22px; border: 1px solid transparent; border-bottom: 0; border-radius: var(--r-md) var(--r-md) 0 0; color: var(--muted); }
+.workbench-tab { max-width: 220px; min-width: 60px; height: 32px; margin-bottom: -1px; box-sizing: border-box; flex: 0 1 auto; display: grid; grid-template-columns: minmax(0, 1fr) 22px; border: 1px solid transparent; border-bottom: 0; border-radius: var(--r-md) var(--r-md) 0 0; color: var(--muted); }
 .workbench-tab:hover { background: var(--overlay); color: var(--text); }
 .workbench-tab[aria-selected="true"] { background: var(--surface); color: var(--text); border-color: var(--border); box-shadow: 0 1px 0 var(--surface); }
 .workbench-tab[aria-selected="true"] .workbench-tab-pick { font-weight: var(--w-med); }
 .workbench-tab button { min-width: 0; padding: 0; border: 0; border-radius: inherit; background: transparent; color: inherit; cursor: pointer; }
 .workbench-tab-pick span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.workbench-tab[data-narrow] .workbench-tab-name { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.workbench-tab .workbench-tab-short { display: block; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .workbench-tab[data-live] .workbench-tab-pick::before {
   content: ""; width: 5px; height: 5px; flex: none; border-radius: 50%; background: var(--accent-ink);
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent); animation: workbench-live 1.9s var(--ease) infinite;

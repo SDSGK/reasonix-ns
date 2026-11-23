@@ -21,11 +21,26 @@ interface Props {
 const COLLAPSE_MS = 9600;
 const SHORT_MS = 6200;
 
+// How long the cover takes to leave. It is lifted off the window rather than
+// faded, and the room underneath is already drawn, so the travel is the only
+// thing that changes. --oobe-out in app.css holds the same travel; the slack
+// is the frame the last of it needs to arrive.
+const EXIT_MS = 600;
+const EXIT_SLACK_MS = 60;
+
+// Reduced motion has no travel: the cover is taken away, not carried off.
+const reducedMotion = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
 // The opening scene keeps a dark ground across application themes.
 export function Welcome({ variant, children, replay, onDone }: Props) {
   const [leaving, setLeaving] = useState(false);
   const done = useRef(false);
   const holds = children != null;
+  // The exit is a one-shot: a re-render must not restart the countdown. The
+  // room underneath keeps reporting while the cover is still up, and every
+  // report is a render.
+  const onDoneRef = useRef(onDone);
+  onDoneRef.current = onDone;
 
   // One exit for every route out: the timer, a key, a click, or reduced motion.
   useEffect(() => {
@@ -35,12 +50,19 @@ export function Welcome({ variant, children, replay, onDone }: Props) {
     const finish = () => {
       if (done.current || holds) return;
       done.current = true;
+      // Reduced motion has no travel: the cover goes at once, and the room
+      // under it is already there.
+      if (reducedMotion()) {
+        onDoneRef.current();
+        return;
+      }
       setLeaving(true);
-      window.setTimeout(onDone, 380);
+      // The layer goes only once the travel has ended. Taken away earlier, the
+      // window would cut the movement off in mid-air.
+      window.setTimeout(() => onDoneRef.current(), EXIT_MS + EXIT_SLACK_MS);
     };
     if (!replay) return;
-    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const at = reduced ? 0 : variant === "full" ? COLLAPSE_MS : SHORT_MS;
+    const at = reducedMotion() ? 0 : variant === "full" ? COLLAPSE_MS : SHORT_MS;
     const timer = window.setTimeout(finish, at);
     const skip = () => finish();
     window.addEventListener("keydown", skip);
@@ -50,7 +72,7 @@ export function Welcome({ variant, children, replay, onDone }: Props) {
       window.removeEventListener("keydown", skip);
       window.removeEventListener("pointerdown", skip);
     };
-  }, [variant, onDone, holds, replay]);
+  }, [variant, holds, replay]);
 
   return (
     <div
@@ -59,9 +81,11 @@ export function Welcome({ variant, children, replay, onDone }: Props) {
       data-held={holds ? "" : undefined}
       data-leaving={leaving ? "" : undefined}
     >
-      <div className="oobe-glow g1" />
-      <div className="oobe-glow g2" />
-      <div className="oobe-glow g3" />
+      <div className="oobe-glows">
+        <div className="oobe-glow g1" />
+        <div className="oobe-glow g2" />
+        <div className="oobe-glow g3" />
+      </div>
       <div className="oobe-vig" />
 
       <div className="oobe-scene">

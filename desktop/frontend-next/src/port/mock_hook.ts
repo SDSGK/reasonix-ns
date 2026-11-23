@@ -3,6 +3,18 @@ import { HttpError, type HookCatalog, type HookDryRun, type HookEntry } from "./
 import type { SubagentRun, SubagentTranscript, SubagentTurn } from "./subagent";
 import type { ProcessEntry } from "./process";
 
+// The mock's sub-agent runs: the delegate deck has something to say in mock
+// mode too, and a run the reader opens has a transcript to read. The times are
+// read fresh each time, so the durations a reader sees are the ones now.
+const mockRuns = (): SubagentRun[] => {
+  const now = Date.now();
+  return [
+    { ref: "sa_mock_review", name: "安全面复核", kind: "task", model: "deepseek-v4-pro", state: "completed", parentCall: "tk1", startedAt: now - 96_000, updatedAt: now - 12_000, tokens: 3_240 },
+    { ref: "sa_mock_patch", name: "落地退避补丁", kind: "task", model: "deepseek-v4-pro", state: "running", parentCall: "fx1", startedAt: now - 5_000, updatedAt: now, tokens: 1_180 },
+    { ref: "sa_mock_tests", name: "测试是否覆盖 401", kind: "task", model: "deepseek-v4-flash", state: "failed", parentCall: "fx1", startedAt: now - 42_000, updatedAt: now - 30_000, tokens: 640 },
+  ];
+};
+
 // Hooks, and what a dry run of one reports back.
 export class MockHook extends MockMcp {
   private hookList: HookEntry[] = [
@@ -15,15 +27,21 @@ export class MockHook extends MockMcp {
   }
 
   async subagents(): Promise<SubagentRun[]> {
-    return [];
+    return mockRuns();
   }
 
   async processes(): Promise<ProcessEntry[]> {
     return [];
   }
 
-  async subagentTranscript(_ref: string): Promise<SubagentTranscript> {
-    throw new HttpError(404, "no sub-agent run answers to that reference", { code: "subagent.not_found" });
+  async subagentTranscript(ref: string): Promise<SubagentTranscript> {
+    const run = mockRuns().find((r) => r.ref === ref);
+    if (!run) throw new HttpError(404, "no sub-agent run answers to that reference", { code: "subagent.not_found" });
+    const messages = [
+      { role: "user" as const, content: "只读地过一遍安全面，别改任何文件。", msgIndex: 0 },
+      { role: "assistant" as const, content: "看过了：没有新的密钥读写路径，退避补丁不碰凭据存储。", msgIndex: 1 },
+    ];
+    return { run, messages, after: 0, next: messages.length, total: messages.length, live: run.state === "running" };
   }
 
   async subagentContinue(_ref: string, _input: string): Promise<SubagentTurn> {

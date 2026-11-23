@@ -84,20 +84,11 @@ export function BranchChip({ port, git, changeCount, countElsewhere = false, onC
       </div>
     );
   }
-  if (git && !git.repo) {
-    return (
-      <div className="studio-branch-pop" onMouseEnter={(e) => fitCard(e.currentTarget)} onFocusCapture={(e) => fitCard(e.currentTarget)}>
-        <div className="mode plain studio-branch" data-norepo="" role="img" aria-label={t("composer.no_git_repository")} tabIndex={0} aria-describedby={branchTipId}>
-          <span className="ic" aria-hidden="true"><StudioIcon name="branch" /></span>
-          <span className="lb">{t("composer.no_git_repository")}</span>
-        </div>
-        <div className="studio-branch-card" style={cardStyle} id={branchTipId} role="tooltip">
-          <b>{t("composer.this_workspace_is_not_version")}</b>
-          <span>{t("composer.there_is_no_git_repository")}</span>
-        </div>
-      </div>
-    );
-  }
+  // A workspace that is simply not a repository draws nothing: there is no
+  // branch to show, no branch to switch to, and a chip that only says "this
+  // is not a repository" is a thing to read for nothing. The chip above it is
+  // a different fact — the folder carries a .git and git refused it, or never
+  // answered — and that one is worth the reader's attention.
   if (!git?.repo) return null;
   return (
     <div className="studio-branch-pop" onMouseEnter={(e) => fitCard(e.currentTarget)} onFocusCapture={(e) => fitCard(e.currentTarget)}>

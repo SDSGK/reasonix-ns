@@ -46,7 +46,9 @@ it("opens a restored reply's file in the right column and reuses its tab on repe
   const { read, browser } = await mount();
   fireEvent.click(screen.getByText("Report"));
   await screen.findByRole("heading", { name: "Generated report" });
-  expect(read).toHaveBeenCalledWith("docs/report.md");
+  // The name travels with the folder it was resolved against, so the kernel
+  // reads it from the same place the reply's link pointed at.
+  expect(read).toHaveBeenCalledWith("docs/report.md", "/work");
   expect(document.querySelector('[data-pane="browser"]')!.hasAttribute("inert")).toBe(false);
   fireEvent.click(screen.getByText("Report"));
   expect(screen.getAllByRole("tab", { name: "report.md" })).toHaveLength(1);

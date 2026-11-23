@@ -57,13 +57,20 @@ func (s *Server) workspaceImage(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write(data)
 }
 
-// readRoot is the folder a read comes from: the workspace, or a folder the user
-// granted this workspace, named by its own path. A grant lives in the user's
-// home, so a checkout cannot add one to itself; a folder that is not on that
-// list, or no longer passes the vetting a grant had to pass, is refused.
+// readRoot is the folder a read comes from: the workspace, or a folder the
+// user granted this workspace, named by its own path. A grant lives in the
+// user's home, so a checkout cannot add one to itself; a folder not on that
+// list, or no longer passing the vetting a grant had to pass, is refused. A
+// name is compared by the folder it names, not by its spelling.
 func (s *Server) readRoot(w http.ResponseWriter, named string) (string, bool) {
 	primary := s.ctl().WorkspaceRoot()
-	if strings.TrimSpace(named) == "" || filepath.Clean(named) == filepath.Clean(primary) {
+	named = strings.TrimSpace(named)
+	if named == "" {
+		return primary, true
+	}
+	// A named root is a folder on this machine, so it is spelled as one: a
+	// relative name is not a folder and never names one.
+	if filepath.IsAbs(named) && sameFolder(named, primary) {
 		return primary, true
 	}
 	extras, err := s.ctl().ReadableExtraRoots()
@@ -72,7 +79,7 @@ func (s *Server) readRoot(w http.ResponseWriter, named string) (string, bool) {
 		return "", false
 	}
 	for _, extra := range extras {
-		if filepath.Clean(extra) == filepath.Clean(named) {
+		if filepath.IsAbs(named) && sameFolder(extra, named) {
 			return extra, true
 		}
 	}

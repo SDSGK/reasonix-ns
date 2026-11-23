@@ -80,7 +80,7 @@ import { loadFoldWorkPref, useFoldsTurnWork } from "../state/foldwork";
 import { ChangedFilesPill } from "./ChangedFilesPill";
 import { TurnDeliveries } from "./TurnDeliveries";
 import { useSubagentNotices } from "./useSubagentNotices";
-import { AgentDeck } from "./AgentDeck";
+import { AgentDeckLayer } from "./AgentDeck";
 import { agentsIn } from "./panels/derive";
 import { RootMissingBanner } from "./RootMissingBanner";
 import { SessionSizeNotice } from "./SessionSizeNotice";
@@ -88,7 +88,7 @@ import { useConversationFiles } from "./useConversationFiles";
 import { NewAnswerAnchor } from "./NewAnswerLine";
 import { useFrozenNewAnswerAnchor } from "./newAnswerMark";
 import { onNewAnswerMarkerChange, sessionKey, showsNewAnswerMarker, useUnreadSince } from "../state/newAnswers";
-import { setAgentDeckOpen, setAgentsRail, useAgentDeckOpen } from "./agentRail";
+import { setAgentsRail, useAgentDeckOpen } from "./agentRail";
 
 export type { PaneReport };
 
@@ -154,8 +154,9 @@ function PaneView({ port, hub, rt, title, active, visible, sideHost, side, onFoc
     pushToast(shown);
   }, []);
   const statusRead = useCallback(() => dispatch({ kind: "__error_clear", from: "status" } as never), []);
-  const agentRuns = useAgentRequest(port, revealBrowser);
+  const agentRuns = useAgentRequest(port, revealBrowser, active);
   const openRun = agentRuns.open;
+  const openRunRef = agentRuns.openRef;
   const openJob = agentRuns.openJob;
   const conversationFiles = useConversationFiles(port, status?.workspaceRoot ?? rt.root, !!rt.host, visible && tab === "flow", revealBrowser, notify);
   const compact = useCompactNow(port, running || s.items.some((item) => item.t === "compaction" && !item.done), notify);
@@ -542,19 +543,15 @@ function PaneView({ port, hub, rt, title, active, visible, sideHost, side, onFoc
       <div className="pviews">
       <div className="worktree-stage-host" ref={setWorktreeTarget} hidden={tab !== "flow" || !worktreePhase}/>
 
-      {agentDeckOpen && rail.tasks.length > 0 && createPortal(
-        <div
-          className="agentrail-scrim"
-          data-action="agentrail.dismiss"
-          onClick={(e) => { if (e.target === e.currentTarget) setAgentDeckOpen(false); }}
-        >
-          <div className="agentrail-float">
-            <AgentDeck
-              tasks={rail.tasks}
-              onOpen={(taskId) => { const call = rail.tasks.find((x) => x.id === taskId)?.tool.id; if (call) void openRun(call).catch(notify); }}
-            />
-          </div>
-        </div>,
+      {/* One deck, drawn by the pane that owns the tasks and pinned to the
+          chrome's badge: the scrim behind it only catches the press that
+          dismisses it. */}
+      {agentDeckOpen && active && rail.tasks.length > 0 && createPortal(
+        <AgentDeckLayer
+          tasks={rail.tasks}
+          onOpen={(taskId) => { const call = rail.tasks.find((x) => x.id === taskId)?.tool.id; if (call) void openRun(call).catch(notify); }}
+          onOpenRun={(ref) => { void openRunRef(ref).catch(notify); }}
+        />,
         document.body,
       )}
       <PaneShown.Provider value={shown}>

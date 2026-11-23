@@ -254,6 +254,15 @@ the picker and keyboard navigation.
 - `.pip` is for a request sent and not yet answered by the kernel: it must
   neither pretend the switch happened nor show nothing at all.
 
+- The prompt glyph is a mark, not a control: it says what the box is for, and
+  it stands beside the send button rather than inside the box, where a drag
+  would take it into the selection of what was typed.
+- The glyph is an inline mark in the row rather than a column of the box:
+  nothing positions it in a grid, and nothing moves it when the caret moves.
+- The note that says where the model came from sits beside the picker while
+  there is room for it, and floats above it when there is not: a line of text
+  has no business pushing the controls around.
+
 ## Run state
 
 - The `R` mark is the one flourish in the whole design. Three strokes drawn in
@@ -593,12 +602,23 @@ told apart by the colour of a symbol.
   reading as if it ran behind them.
 - The answer and machine output differed only in colour and line height, so a
   column of them weighed the same. One step of the type scale separates "this is
-  the answer" from "this is process"; machine output stays at `--read`, so only
-  one side moved.
+  the answer" from "this is process"; the two no longer weigh the same.
+- The reply is the page's main text and the work around it is evidence, so
+  the answer reads a step larger than the rows that surround it. Every size
+  inside it, its headings included, is read off `--read`, so the whole answer
+  scales with it instead of with one rule.
+- The thought says what the model was weighing, not what it said, so it reads
+  a step below the answer. Its size rides the token the block already uses,
+  which is the one the design layer reads it from.
+- A call's own words are evidence, not the answer: they read a step below it.
+  The reader's own message keeps its size — that text is theirs.
 - The steps in between are scanned, not read: one step, one line, with long
   arguments elided rather than wrapped. Wrapping makes cards of one kind differ
   in height across a screen, and the hierarchy then has to be worked out card by
   card. The anchor, the answer and the decisions may still wrap: those are read.
+- The execution process is a list of evidence: its rows read a step below the
+  answer, and the row name takes its size from the token the rest of the row
+  does.
 - A tool's headline names the call, which is the only way to know which one it
   is. Name and tag answer one question (what tool, in which shell); the argument
   answers another (what this call did). All three were 8px apart, which reads as
@@ -737,6 +757,9 @@ told apart by the colour of a symbol.
   has just landed a change, or two places move at once and the reader does not
   know which to watch.
 
+- A background task is a row of evidence beside the conversation, so it reads
+  a step below the sentence that started it.
+
 ## Reduced motion
 
 - The three reload states already speak through colour and a line of text, so
@@ -748,6 +771,9 @@ told apart by the colour of a symbol.
 - "Running" still has to be said when the travelling light stops: the line takes
   a solid, static form, and the composer's sweeping light becomes one still line
   that still says "this is taking effect".
+
+- The opening cover has no travel: it is taken away rather than carried off,
+  and the room under it is already drawn.
 
 ## Folding the scene
 
@@ -895,6 +921,12 @@ what exists.
 - Navigation labels keep their content width before secondary counts yield.
   Search aliases never become separate settings or controls.
 
+- The category column is a tree: a section, and the blocks drawn on it. A
+  section's name carries no count, because a count there would say only how
+  many rows to scroll past, and the rows are listed under it.
+- A phone shows the categories as one strip of pills, and a tree has nowhere
+  to grow there: the blocks wait for a window with a column to hold them.
+
 ## Settings rows
 
 Log paths and account notes wrap within their rows, including long unbroken
@@ -995,6 +1027,9 @@ to absorb horizontal overflow.
 - An exception marker exists because a switch answers for this project by
   default — which is both the wanted default and an invisible one. A row with an
   exception says so itself and offers the way back.
+
+- The fold that names the reasons is a label: a step below the text it opens.
+  The reasons themselves are sentences and stay legible.
 
 ## Roles and models
 
@@ -1176,6 +1211,27 @@ A sub-agent row, by the list's own width:
   same way, and a row where each control answers to a different one is a row
   you have to learn.
 
+- The deck can also stand on its own: the chrome badge's own panel, pinned to
+  the badge rather than carried by a chip's anchor. It gives its rows the
+  room the popover gives them, so the two read as one reading.
+- The deck is a fixed layer of its own, pinned under the badge by script. It
+  names its own frame — a border, an opaque surface and the floating shadow
+  the rest of the window's layers use — so it reads as floating over the
+  conversation rather than painted on it.
+- The scrim under the deck is the catch-all: it covers the window so that a
+  press anywhere else dismisses it. It carries no layout of its own — where
+  the deck sits is the badge's business, not the scrim's.
+- The deck is held back until the pin has been measured, so it is never seen
+  at the wrong corner for a frame between the mount and the measurement.
+- A narrow window has no room for the desktop's width, so the deck takes the
+  window's own and keeps its rows one line each.
+
+## Sub-agent run view
+
+- The task the main session handed over can be longer than the card. It is
+  folded to a few lines and opened on demand, and the fade that says there is
+  more is applied only to a task that does not fit.
+
 ## Token readings
 
 - Sent steps when a round bills; received climbs while the model writes, from
@@ -1289,6 +1345,18 @@ A sub-agent row, by the list's own width:
   keeps the app theme — an overlay should rise out of the scene. Only the trigger
   is overridden: menu items are buttons too, and an unscoped selector paints them
   white-on-transparent, which lands as white on white in a light menu.
+
+- The opening cover travels, so the compositor is told before the travel
+  starts: its first frames are laid out on the main thread otherwise, and it
+  stutters.
+- How long the cover takes to leave, and the way it goes, is longer than a
+  panel's because it crosses the whole window.
+- The cover is lifted off the window rather than faded out: the room under it
+  is already drawn, so the hand-off is one movement instead of a cut.
+- The glows bleed past the window on purpose. They are held in a layer of
+  their own, clipped there, because the cover above them is a scroll box and a
+  glow that reaches past its edge would put a scrollbar down the side of the
+  screen.
 
 ## Panes
 
@@ -1658,6 +1726,20 @@ A sub-agent row, by the list's own width:
 - A call brought to the end of the transcript is the same Line drawn open, under a small caption that says it was brought. It sits in `.activity-body` with the indent and left rule removed, so every rule that styles a row in the Execution group styles it.
 - The Line rules are keyed `.flow .activity-body .call[data-call] > .c` so they outrank the card shell in both themes; the card shell's surface background is for cards, never rows.
 
+- The command's copy control is small, quiet, and there when it is looked
+  for. The row it sits in is a summary, so the click copies and nothing else.
+- The execution process orders its row by hand, so the control is told where
+  it belongs: right after the command it copies.
+- Without a pointer there is no hover to look for it under, so the control is
+  simply there.
+
+## The open call
+
+- An expanded call can hold a whole sub-agent conversation. The page keeps its
+  own height budget, so the body scrolls inside the card, and it opens at the
+  bottom like a terminal: the newest line is the one read.
+- A reader who asked for the whole output gets the whole page back.
+
 ## Remembering a choice
 
 - A prompt that can answer "this and every later one of its kind" draws those choices through one component (`RememberChoice`), only for the kinds the kernel says it will honour, as the quieter buttons beside the primary one.
@@ -1673,6 +1755,12 @@ A sub-agent row, by the list's own width:
 - Time metadata comes only from canonical last-active timestamps. Loaded/total session counts remain available to assistive technology without visible badges.
 - The sidebar defaults to 316px, respects saved widths and retains its existing 232px floor. Folder glyphs, titles, action slots and conversation indents align across environments. Hover actions reserve their space.
 - The diagonal toolbar glyphs reuse Tabler's MIT-licensed [collapse][tabler-collapse] and [expand][tabler-expand] paths through the existing Studio icon component.
+
+- The folder's two states are two glyphs, one for each: the open folder's arrow
+  points down and the shut one's points right. Nothing is rotated to mean the
+  other.
+- The panel that gives a project its own glyph and colour opens inside the
+  project's own menu, so it needs no position of its own.
 
 ## Session hover actions
 
@@ -1750,6 +1838,10 @@ A sub-agent row, by the list's own width:
 - Hover waits briefly before opening and closing so the pointer can cross to
   the card. Click and keyboard activation also work; Escape restores focus.
   The portaled card follows its anchor and stays inside the viewport.
+
+- The toolbar at the foot of the rail is its own zone. A rule on its left
+  edge, one shade stronger than the hairline above it, keeps it apart from the
+  list it sits under.
 
 ## Display math
 
