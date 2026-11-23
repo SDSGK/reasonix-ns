@@ -7,41 +7,8 @@ import { WORKBENCH_ACTIONS } from "./actions_workbench";
 // The census oracle is independent of production literals so disagreements fail.
 // An id names the intent; data-target and data-value name its entity and choice.
 
-export type ActionKind =
-  /** Changes only what is on screen. Must not reach the kernel. */
-  | "view"
-  /** Moves the reader somewhere else without changing session state. */
-  | "navigation"
-  /** Asks the kernel to change canonical state. */
-  | "kernel-mutation"
-  /** Answers something the host is blocked on: an approval, a question. */
-  | "interaction"
-  /** Removes something a person would have to recreate by hand. */
-  | "destructive"
-  /** Reaches the window, not the kernel. */
-  | "shell-native"
-  /** Safe to repeat; the boundary is part of its contract. */
-  | "repeatable";
-
-/** The lowest level of evidence this action's contract may rest on. Not a test
- *  file name — that would be a second hand-kept index, and it would rot. */
-export type ActionProof =
-  /** A render assertion is enough: nothing happens between click and answer. */
-  | "static"
-  /** jsdom: pending, refusal, repeat, focus. Most controls belong here. */
-  | "interaction"
-  /** Chromium: layout, hit target, scroll ownership, real shell adapters. */
-  | "browser"
-  /** The real kernel: the canonical state this claims to change did change. */
-  | "authority-effect";
-
-export interface UIAction {
-  id: string;
-  kind: ActionKind;
-  /** Whether the click is about a particular entity, named by data-target. */
-  target: "none" | "entity" | "optional";
-  proof: ActionProof;
-}
+import type { ActionKind, ActionProof, UIAction } from "./actions_types";
+export type { ActionKind, ActionProof, UIAction };
 
 export const ACTIONS: UIAction[] = [
   {id:"agent-composition.select",kind:"kernel-mutation",target:"none",proof:"authority-effect"},
@@ -689,6 +656,15 @@ export const ACTIONS: UIAction[] = [
   { id: "plan.collapse", kind: "view", target: "none", proof: "interaction" },
   { id: "plan.jump", kind: "navigation", target: "none", proof: "interaction" },
   { id: "tool-approval.mode", kind: "kernel-mutation", target: "none", proof: "authority-effect" },
+  // The one permission choice that takes the sandbox down with it, so it asks
+  // before it does rather than after.
+  { id: "safety.allow-all-confirm", kind: "kernel-mutation", target: "none", proof: "authority-effect" },
+  // Folding a task's own text open is reading, not acting.
+  { id: "agent.task-expand", kind: "view", target: "none", proof: "interaction" },
+  // Opening and closing a group of settings is moving within the screen.
+  { id: "settings.nav-toggle", kind: "view", target: "none", proof: "interaction" },
+  // Copying a command reaches the window, not the kernel.
+  { id: "tool.copy-command", kind: "shell-native", target: "none", proof: "interaction" },
   // The folder-trust question and the no-sandbox note beside the composer.
   { id: "workspace.trust", kind: "kernel-mutation", target: "none", proof: "authority-effect" },
   { id: "posture-note.dismiss", kind: "view", target: "none", proof: "interaction" },
