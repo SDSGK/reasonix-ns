@@ -171,11 +171,15 @@ func (m *Manager) recordCompletion(parentSession, id, kind, label, resultRef str
 	}
 
 	ne := event.Event{Kind: event.Notice, Level: event.LevelInfo, Code: event.NoticeCodeJobFinished,
-		Text: fmt.Sprintf("background %s finished: %s", kind, id)}
+		Audience: event.NoticeAudienceOperator,
+		Text:     fmt.Sprintf("background %s finished: %s", kind, id)}
 	payload := event.JobNotice{Kind: kind, ID: id, Label: label}.Encode()
 	switch st {
 	case Failed:
 		ne.Level, ne.Code = event.LevelWarn, event.NoticeCodeJobFailed
+		// A failure is the one ending a person has to act on, so it stays in
+		// the conversation: the finished notice is about the machine.
+		ne.Audience = event.NoticeAudienceDefault
 		ne.Text = fmt.Sprintf("background %s failed: %s — %v", kind, id, err)
 		failed := event.JobNotice{Kind: kind, ID: id, Label: label, Error: fmt.Sprint(err)}
 		if ex, ok := exitOf(err); ok {

@@ -403,7 +403,8 @@ func (m *Manager) StartForSession(parentSession, kind, label string, run func(ct
 	}
 	j.mu.Unlock()
 	m.emitIfActive(parentSession, event.Event{Kind: event.Notice, Level: event.LevelInfo, Code: event.NoticeCodeJobStarted,
-		Text: startedText(kind, id, label), Detail: event.JobNotice{Kind: kind, ID: id, Label: label}.Encode()})
+		Audience: event.NoticeAudienceOperator,
+		Text:     startedText(kind, id, label), Detail: event.JobNotice{Kind: kind, ID: id, Label: label}.Encode()})
 
 	if !nilutil.IsNil(m.taskRecorder) {
 		m.taskRecorder.RecordStart(id, kind, label)

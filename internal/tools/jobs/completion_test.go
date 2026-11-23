@@ -315,3 +315,46 @@ func TestStartedJobEmitsCodedNoticeWithTypedIdentity(t *testing.T) {
 		t.Fatal("a started notice's Detail is its payload, so a sink that prints Text must not append it")
 	}
 }
+
+// A job's start and its end are what the machine did, not something a person
+// said: every background task puts two cards in the conversation, and the
+// cards say nothing about the work. A failure is the one ending a person has
+// to act on, so that one stays.
+func TestJobLifecycleNoticesAreAboutTheMachine(t *testing.T) {
+	sink := &recordingSink{}
+	m := NewManager(sink)
+	defer m.Close()
+	run := func(err error) {
+		j := m.Start("bash", "make build", func(context.Context, io.Writer) (string, error) { return "", err })
+		<-j.done
+	}
+	run(nil)
+	run(io.ErrUnexpectedEOF)
+	waitFor(t, func() bool {
+		sink.mu.Lock()
+		defer sink.mu.Unlock()
+		return len(sink.events) >= 4
+	})
+	codes := map[string]event.Event{}
+	for _, ev := range sink.events {
+		if ev.Kind == event.Notice && ev.Code != "" {
+			codes[ev.Code] = ev
+		}
+	}
+	for _, code := range []string{event.NoticeCodeJobStarted, event.NoticeCodeJobFinished} {
+		ev, ok := codes[code]
+		if !ok {
+			t.Fatalf("no %s notice in %+v", code, sink.events)
+		}
+		if ev.Audience != event.NoticeAudienceOperator {
+			t.Fatalf("%s audience = %q, want %q — it is about the machine, not the conversation", code, ev.Audience, event.NoticeAudienceOperator)
+		}
+	}
+	failed, ok := codes[event.NoticeCodeJobFailed]
+	if !ok {
+		t.Fatalf("no %s notice in %+v", event.NoticeCodeJobFailed, sink.events)
+	}
+	if failed.Audience == event.NoticeAudienceOperator {
+		t.Fatalf("a failed job's audience = %q: a failure is what a person has to act on, so it stays in the conversation", failed.Audience)
+	}
+}
