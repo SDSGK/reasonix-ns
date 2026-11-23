@@ -35,15 +35,26 @@ function Harness({ port }: { port: Port }) {
   );
 }
 
-const tabs = () => [...document.querySelectorAll("[role=tab]:not([data-new])")].map((e) => e.textContent?.trim());
-const selected = () => document.querySelector("[role=tab][aria-selected=true]")?.textContent?.trim();
+// The tab's own name, which is what a reader reads on it: the strip keeps a
+// short form beside it for a narrow tab, and that form is hidden from the
+// eye as well as from the name.
+const named = (e: Element) => {
+  const copy = e.cloneNode(true) as HTMLElement;
+  copy.querySelectorAll("[aria-hidden=true]").forEach((n) => n.remove());
+  return copy.textContent?.trim();
+};
+const tabs = () => [...document.querySelectorAll("[role=tab]:not([data-new])")].map(named);
+const selected = () => {
+  const el = document.querySelector("[role=tab][aria-selected=true]");
+  return el ? named(el) : undefined;
+};
 afterEach(cleanup);
 
 describe("sub-agent runs as workbench tabs", () => {
   it("opens the run the card's call spawned and reads its record", async () => {
     render(<Harness port={new Port()} />);
     await userEvent.click(screen.getByText("a"));
-    await waitFor(() => expect(tabs()).toEqual(["audit"]));
+    await waitFor(() => expect(tabs()).toEqual(["audit · 已完成"]));
     expect(opened).toBe(true);
     expect(await screen.findByText(/report of sa_1/)).toBeTruthy();
   });
@@ -51,30 +62,30 @@ describe("sub-agent runs as workbench tabs", () => {
   it("opens every run of a call that spawned several, selecting the first, and shows the selected one", async () => {
     render(<Harness port={new Port()} />);
     await userEvent.click(screen.getByText("b"));
-    await waitFor(() => expect(tabs()).toEqual(["review", "review"]));
-    expect(selected()).toBe("review");
+    await waitFor(() => expect(tabs()).toEqual(["review · 已完成", "review · 已完成"]));
+    expect(selected()).toBe("review · 已完成");
     expect(await screen.findByText(/report of sa_2/)).toBeTruthy();
   });
 
   it("does not open the same run twice, and lets several stay open at once", async () => {
     render(<Harness port={new Port()} />);
     await userEvent.click(screen.getByText("a"));
-    await waitFor(() => expect(tabs()).toEqual(["audit"]));
+    await waitFor(() => expect(tabs()).toEqual(["audit · 已完成"]));
     await userEvent.click(screen.getByText("a"));
     await act(async () => {});
-    expect(tabs()).toEqual(["audit"]);
+    expect(tabs()).toEqual(["audit · 已完成"]);
     await userEvent.click(screen.getByText("b"));
-    await waitFor(() => expect(tabs()).toEqual(["audit", "review", "review"]));
+    await waitFor(() => expect(tabs()).toEqual(["audit · 已完成", "review · 已完成", "review · 已完成"]));
   });
 
   it("opens a closed run again", async () => {
     render(<Harness port={new Port()} />);
     await userEvent.click(screen.getByText("a"));
-    await waitFor(() => expect(tabs()).toEqual(["audit"]));
+    await waitFor(() => expect(tabs()).toEqual(["audit · 已完成"]));
     await userEvent.click(document.querySelector<HTMLElement>(".workbench-tab-close")!);
     await waitFor(() => expect(tabs()).toEqual([]));
     await userEvent.click(screen.getByText("a"));
-    await waitFor(() => expect(tabs()).toEqual(["audit"]));
+    await waitFor(() => expect(tabs()).toEqual(["audit · 已完成"]));
   });
 
   it("reports false for a call with no run, and opens nothing", async () => {

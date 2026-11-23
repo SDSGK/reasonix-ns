@@ -7,6 +7,11 @@ import { HttpError } from "../port/port";
 import { parseGrantedFile } from "./grantedfiles";
 import { t } from "../i18n";
 
+// The kernel's answer when a read names a folder this workspace was not
+// granted. The folder is the one a name was resolved against, so it says the
+// folder is unknown, not that the file is gone.
+const WORKSPACE_ROOT_NOT_GRANTED = "workspace.root_not_granted";
+
 type Entry = {
   file: WorkspaceFile | null; draft: string; diff: string; error: string; missing: boolean;
   errorCode: string;
@@ -14,6 +19,25 @@ type Entry = {
 };
 const blank = (): Entry => ({ file: null, draft: "", diff: "", error: "", errorCode: "", missing: false, pending: "", issued: 0 });
 const dirty = (entry: Entry) => !!entry.file && entry.draft !== entry.file.content;
+
+// A file is named by the folder it lives in and its name inside that folder.
+// The workbench knows the folder a name was resolved against — a reply's link
+// names a file in the conversation's workspace — while the kernel resolves a
+// bare name against the workspace it holds. A name that reaches the kernel
+// without its folder points at the wrong place, and the read answers "not
+// there" for a file the reply's own tooltip points at. So the folder travels
+// with the read; a kernel that does not hold that folder, or that finds no
+// such name in it, reads the name in the workspace itself.
+async function readNamed(port: AgentPort, path: string, root: string) {
+  if (!root) return port.workspaceFile(path);
+  try {
+    return await port.workspaceFile(path, root);
+  } catch (e) {
+    const code = e instanceof HttpError ? e.reason?.code ?? "" : "";
+    if (code !== WORKSPACE_FILE_MISSING && code !== WORKSPACE_ROOT_NOT_GRANTED) throw e;
+    return await port.workspaceFile(path);
+  }
+}
 
 export function useWorkbenchFiles({ port, workspaceRoot, repos = [], path, openPaths, shown, refresh, poll }: {
   port: AgentPort; workspaceRoot: string; repos?: GitRepoRow[]; path: string; openPaths: string[]; shown: boolean; refresh: string; poll: boolean;
@@ -53,7 +77,7 @@ export function useWorkbenchFiles({ port, workspaceRoot, repos = [], path, openP
       try {
         const granted = parseGrantedFile(path);
         const [file, patch] = await Promise.all([
-          granted ? port.workspaceFile(granted.rel, granted.root) : port.workspaceFile(path),
+          granted ? port.workspaceFile(granted.rel, granted.root) : readNamed(port, path, workspaceRoot),
           quiet || granted ? Promise.resolve(null) : diffOf(port, repoList.current, path),
         ]);
         if (!valid() || dirty(entry)) return;
@@ -66,7 +90,7 @@ export function useWorkbenchFiles({ port, workspaceRoot, repos = [], path, openP
         if (!quiet) entry.diff = patch?.diff ?? "";
       } catch (e) {
         const code = e instanceof HttpError ? e.reason?.code ?? "" : "";
-        const unavailable = [WORKSPACE_FILE_MISSING, "workspace.root_not_granted", "workspace.preview_denied", "workspace.file_unreadable"].includes(code);
+        const unavailable = [WORKSPACE_FILE_MISSING, WORKSPACE_ROOT_NOT_GRANTED, "workspace.preview_denied", "workspace.file_unreadable"].includes(code);
         if (valid() && !dirty(entry) && (!quiet || unavailable)) {
           changed = true;
           entry.error = reason(e);
@@ -83,7 +107,7 @@ export function useWorkbenchFiles({ port, workspaceRoot, repos = [], path, openP
       live = false;
       if (ticket === entry.issued) entry.pending = "";
     };
-  }, [port, entries, path, shown, notify]);
+  }, [port, entries, path, shown, notify, workspaceRoot]);
   useEffect(() => read(), [read, refresh]);
   useEffect(() => {
     if (!poll || !shown) return;

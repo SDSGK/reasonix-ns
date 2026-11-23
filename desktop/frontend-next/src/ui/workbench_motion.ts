@@ -1,5 +1,6 @@
-import { useEffect, useRef, useState, type RefObject } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type RefObject } from "react";
 import { listenAction } from "./listen";
+import { fitTabs, TAB_CHROME, TAB_MIN_WIDTH, TAB_NARROW_WIDTH } from "./workbench_tabs";
 
 const still = () => typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -35,33 +36,98 @@ export function useSwitchFade(ref: RefObject<HTMLElement | null>, key: string) {
   useEffect(() => {
     if (last.current === key) return;
     last.current = key;
-    const el = ref.current;
-    if (el && typeof el.animate === "function" && !still()) el.animate([{ opacity: 0.35 }, { opacity: 1 }], { duration: 120, easing: "ease-out" });
+    const node = ref.current;
+    if (node && typeof node.animate === "function" && !still()) node.animate([{ opacity: 0.35 }, { opacity: 1 }], { duration: 120, easing: "ease-out" });
   }, [ref, key]);
 }
 
-/** The tab strip's ref, and the tabs it cannot show at its width, in strip order. */
-export function useOverflowTabs(keys: string[]): [RefObject<HTMLDivElement | null>, string[]] {
+/** Where the strip's ends are, so the edge that waits can be faded in. */
+function markEdges(el: HTMLElement) {
+  const room = el.scrollWidth - el.clientWidth;
+  el.dataset.scroll = room <= 1 ? "none" : el.scrollLeft <= 1 ? "start" : el.scrollLeft >= room - 1 ? "end" : "mid";
+}
+
+/** The tab strip's own behaviour: the tabs it cannot show at its width, and the
+ *  width each tab is drawn at so that all of them fit — the way a browser's tab
+ *  bar does. A trackpad's sideways swipe scrolls them.
+ *
+ * Both halves live here, on one ref, because a listener can only say which
+ * input it is when the element it hangs off is the one this file declares. */
+export function useTabStrip(keys: string[], labels: string[]): {
+  strip: RefObject<HTMLDivElement | null>;
+  hidden: string[];
+  fitted: Record<string, { width: number; narrow: boolean }>;
+} {
   const strip = useRef<HTMLDivElement>(null);
   const [hidden, setHidden] = useState<string[]>([]);
-  const joined = keys.join("\n");
+  const [fitted, setFitted] = useState<Record<string, { width: number; narrow: boolean }>>({});
+  const joinedKeys = keys.join("\n");
+  const joinedLabels = labels.join("\n");
+
+  // The tabs that do not fit: they are the ones the overflow menu offers.
   useEffect(() => {
-    const stripEl = strip.current;
-    if (!stripEl) return;
+    const el = strip.current;
+    if (!el) return;
     const measure = () => {
-      const box = stripEl.getBoundingClientRect();
-      const out = [...stripEl.querySelectorAll<HTMLElement>("[data-key]")]
+      const box = el.getBoundingClientRect();
+      const out = [...el.querySelectorAll<HTMLElement>("[data-key]")]
         .filter((tab) => { const r = tab.getBoundingClientRect(); return r.width > 0 && (r.right > box.right + 1 || r.left < box.left - 1); })
         .map((tab) => tab.dataset.key!);
       setHidden((was) => (was.join("\n") === out.join("\n") ? was : out));
+      markEdges(el);
     };
     measure();
     const ro = typeof ResizeObserver === "function" ? new ResizeObserver(measure) : null;
-    ro?.observe(stripEl);
-    const stop = listenAction(stripEl, "scroll", { action: "workbench.tab-overflow", listener: measure }, { passive: true });
+    ro?.observe(el);
+    const stop = listenAction(el, "scroll", { action: "workbench.tab-overflow", listener: measure }, { passive: true });
     return () => { ro?.disconnect(); stop(); };
-  }, [joined]);
-  return [strip, hidden];
+  }, [joinedKeys]);
+
+  // The width each tab is drawn at, and the gesture that scrolls them.
+  useLayoutEffect(() => {
+    const el = strip.current;
+    if (!el) return;
+    const measure = () => {
+      const rows = [...el.querySelectorAll<HTMLElement>(".workbench-tab[data-key]")];
+      // A tab costs its chrome besides its title, so the whole title is what
+      // says whether the row fits.
+      const naturals = rows.map((row) => TAB_CHROME + (row.querySelector<HTMLElement>(".workbench-tab-name")?.scrollWidth ?? 0));
+      const width = fitTabs(naturals, el.clientWidth);
+      const next: Record<string, { width: number; narrow: boolean }> = {};
+      rows.forEach((row, i) => {
+        if (width === null) return;
+        const w = Math.max(TAB_MIN_WIDTH, Math.min(naturals[i], width));
+        next[row.dataset.key!] = { width: w, narrow: w < TAB_NARROW_WIDTH };
+      });
+      setFitted((was) => (JSON.stringify(was) === JSON.stringify(next) ? was : next));
+      markEdges(el);
+    };
+    // A native listener: React's own wheel handler is passive, and a gesture
+    // the page eats is a gesture the reader never gets.
+    const onWheel = (e: Event) => {
+      const wheel = e as WheelEvent;
+      const delta = Math.abs(wheel.deltaX) >= Math.abs(wheel.deltaY) ? wheel.deltaX : wheel.deltaY;
+      const room = el.scrollWidth - el.clientWidth;
+      if (!delta || room <= 0) return;
+      const next = el.scrollLeft + delta;
+      if (next < 0 || next > room) return;
+      wheel.preventDefault();
+      el.scrollLeft = next;
+      markEdges(el);
+    };
+    measure();
+    const ro = typeof ResizeObserver === "function" ? new ResizeObserver(measure) : null;
+    ro?.observe(el);
+    window.addEventListener("resize", measure);
+    const stop = listenAction(el, "wheel", { action: "workbench.tab-scroll", listener: onWheel }, { passive: false });
+    return () => {
+      ro?.disconnect();
+      window.removeEventListener("resize", measure);
+      stop();
+    };
+  }, [joinedLabels]);
+
+  return { strip, hidden, fitted };
 }
 
 /** Slides the workbench in from the right when it is brought out, never when it is
@@ -71,9 +137,9 @@ export function useOpenSlide(ref: RefObject<HTMLElement | null>, shown: boolean)
   useEffect(() => {
     const opened = !was.current && shown;
     was.current = shown;
-    const el = ref.current;
-    if (opened && el && typeof el.animate === "function" && !still()) {
-      el.animate([{ transform: "translateX(24px)", opacity: 0 }, { transform: "none", opacity: 1 }], { duration: 200, easing: "cubic-bezier(.2,0,0,1)" });
+    const node = ref.current;
+    if (opened && node && typeof node.animate === "function" && !still()) {
+      node.animate([{ transform: "translateX(24px)", opacity: 0 }, { transform: "none", opacity: 1 }], { duration: 200, easing: "cubic-bezier(.2,0,0,1)" });
     }
   }, [ref, shown]);
 }

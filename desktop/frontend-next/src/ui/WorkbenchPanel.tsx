@@ -16,7 +16,7 @@ import { WorkbenchStatus } from "./WorkbenchStatus";
 import { WorkbenchFileTree } from "./WorkbenchFileTree";
 import { WorkbenchChangesPage } from "./WorkbenchChangesPage";
 import { UnifiedDiff } from "./UnifiedDiff";
-import { leave, slideAway, useEnteringTabs, useOpenSlide, useOverflowTabs, useSwitchFade } from "./workbench_motion";
+import { leave, slideAway, useEnteringTabs, useOpenSlide, useSwitchFade, useTabStrip } from "./workbench_motion";
 import { WorkbenchTabOverflow } from "./WorkbenchTabOverflow";
 import { WorkbenchCloseAsk } from "./WorkbenchCloseAsk";
 import { WorkbenchState } from "./WorkbenchState";
@@ -32,7 +32,7 @@ import type { LocalRefs } from "./Markdown";
 import { useGlance } from "./glance";
 import { useWorkbenchFiles } from "./useWorkbenchFiles";
 import { documentRefs, parseGrantedFile } from "./grantedfiles";
-import { keyOf, labelOf, type Surface } from "./workbench_tabs";
+import { keyOf, labelOf, shortTitle, type Surface } from "./workbench_tabs";
 import { useTabNames } from "./useTabNames";
 import { useTabClose } from "./useTabClose";
 import { BrowserTabMenu } from "./BrowserTabMenu";
@@ -384,11 +384,11 @@ export function WorkbenchPanel({
   const [asking, setAsking] = useState<{ path: string; anchor: HTMLElement } | null>(null);
   const tabKeys = surfaces.map(keyOf);
   const entering = useEnteringTabs(tabKeys);
-  const [strip, overflow] = useOverflowTabs(tabKeys);
+  const { strip, hidden: overflow, fitted } = useTabStrip(tabKeys, surfaces.map((surface) => `${keyOf(surface)}\t${labelFor(surface)}`));
   useSwitchFade(canvas, launcher ? "launcher" : active ? keyOf(active) : "");
   const activeKey = active ? keyOf(active) : "";
   useEffect(() => {
-    strip.current?.querySelector('[aria-selected="true"]')?.scrollIntoView?.({ block: "nearest", inline: "nearest" });
+    strip.current?.querySelector('[aria-selected="true"]')?.scrollIntoView?.({ block: "nearest", inline: "nearest", behavior: "smooth" });
   }, [activeKey, surfaces.length]);
   // Picking a file is asking to read it; the list stays where it is.
   const [recentFiles, setRecentFiles] = useState(() => readRecentFiles(workspaceRoot ?? ""));
@@ -458,7 +458,7 @@ export function WorkbenchPanel({
   const close = (targets: Surface[]) => { supersede(); return terminals.guard(targets, closeTabs); };
   // The sub-agent the reader is inside, named in the chrome's breadcrumb; the
   // way back closes the tab it was showing.
-  useAgentCrumbSurface(active, shown && !launcher, close);
+  useAgentCrumbSurface(active, shown && !launcher, { close, surfaces, select: pick });
   const dismissTabMenu = useCallback(() => setTabMenu(null), []);
   const [tabMenu, setTabMenu] = useState<{ surface: Surface; x: number; y: number; anchor: HTMLElement } | null>(null);
   const pages = surfaces.filter((s) => s.kind !== "file");
@@ -503,9 +503,6 @@ export function WorkbenchPanel({
           className="workbench-tablist"
           role="tablist"
           ref={strip}
-          onWheel={(e) => {
-            if (e.deltaY && strip.current) strip.current.scrollLeft += e.deltaY;
-          }}
         >
         {surfaces.map((surface) => (
           <div
@@ -516,6 +513,8 @@ export function WorkbenchPanel({
             data-live={surface.kind === "browser" && surface.tab.active ? "" : undefined}
             data-dirty={surface.kind === "file" && unsaved.includes(surface.path) ? "" : undefined}
             data-key={keyOf(surface)} data-enter={entering.has(keyOf(surface)) ? "" : undefined}
+            data-narrow={fitted[keyOf(surface)]?.narrow ? "" : undefined}
+            style={fitted[keyOf(surface)] ? { width: `${fitted[keyOf(surface)].width}px` } : undefined}
             data-action-contextmenu="workbench.browser-menu" data-target={keyOf(surface)}
             onContextMenu={(e) => offerTabMenu(e, surface)}
           >
@@ -559,7 +558,8 @@ export function WorkbenchPanel({
               }}
             >
               <WorkbenchTabIcon surface={surface} />
-              <span>{labelFor(surface)}</span>
+              <span className="workbench-tab-name">{labelFor(surface)}</span>
+              {fitted[keyOf(surface)]?.narrow && <span className="workbench-tab-short" aria-hidden="true">{shortTitle(labelFor(surface))}</span>}
               {surface.kind === "terminal" && surface.busy && <i className="workbench-tab-busy" aria-hidden />}
               {surface.kind === "changes" && changes.length > 0 && <small className="workbench-tab-count">{changes.length}</small>}
             </button>
@@ -588,7 +588,7 @@ export function WorkbenchPanel({
         )}
         </div>
         <WorkbenchTabOverflow tabs={overflow.flatMap((k) => { const s = surfaces.find((x) => keyOf(x) === k); return s ? [{ key: k, label: labelFor(s) }] : []; })}
-          onPick={(k) => { pick(k); strip.current?.querySelector(`[data-key="${CSS.escape(k)}"]`)?.scrollIntoView({ inline: "nearest" }); }} />
+          onPick={(k) => { pick(k); strip.current?.querySelector(`[data-key="${CSS.escape(k)}"]`)?.scrollIntoView({ inline: "nearest", behavior: "smooth" }); }} />
         <TooltipButton
           className="workbench-new"
           data-action="workbench.new"
