@@ -26,6 +26,7 @@ import { registerNest } from "./nestreveal";
 import { useFullOutput, type ReadOutput } from "./useFullOutput";
 import type { StateTool } from "../../state/outputcap";
 import { ImagePreview } from "../ImagePreview";
+import { CommandCopy, commandOf } from "./CommandCopy";
 
 // The spec pops a symbol as it settles — colour arriving is the finish signal.
 // Only the transition may fire it: a restored transcript is all settled cards,
@@ -77,6 +78,38 @@ function useFellInto(bad: boolean): boolean {
     return () => clearTimeout(id);
   }, [bad]);
   return on;
+}
+
+// The body of an open call scrolls inside the card. It opens at the bottom,
+// like a terminal, and keeps the newest line in view while the reader is
+// there; scroll up to read the history and it stops following, until they
+// come back to the bottom.
+function useStickyBody(open: boolean) {
+  const body = useRef<HTMLDivElement>(null);
+  const follow = useRef(true);
+  useEffect(() => {
+    const el = body.current;
+    if (!el || !open) return;
+    const atBottom = () => el.scrollHeight - el.scrollTop - el.clientHeight <= 8;
+    const toBottom = () => { if (follow.current) el.scrollTop = el.scrollHeight; };
+    const onScroll = () => { follow.current = atBottom(); };
+    follow.current = true;
+    el.addEventListener("scroll", onScroll, { passive: true });
+    // Output that grows by a line is a mutation; output that grows because
+    // something in it loaded is a resize.
+    const grew = new MutationObserver(toBottom);
+    grew.observe(el, { childList: true, subtree: true, characterData: true });
+    const resized = typeof ResizeObserver === "function" ? new ResizeObserver(toBottom) : null;
+    resized?.observe(el);
+    const frame = requestAnimationFrame(() => { el.scrollTop = el.scrollHeight; });
+    return () => {
+      el.removeEventListener("scroll", onScroll);
+      grew.disconnect();
+      resized?.disconnect();
+      cancelAnimationFrame(frame);
+    };
+  }, [open]);
+  return body;
 }
 
 function useSettling(running: boolean): { pop: boolean; swap: boolean } {
@@ -143,6 +176,9 @@ export function ToolCard({
   // and one that sits blank until the whole file arrives at once.
   const streaming = running && !tool.args && (tool.argChars ?? 0) > 0;
   const arg = tool.name === "todo_write" ? "" : streaming ? `${tokens(tool.argChars!)} 字符` : shortArgs(tool.args ?? "");
+  // The command the call ran, in full: the row beside it shows a fragment of
+  // it, and the clipboard is where the whole line belongs.
+  const command = categoryOf(shown) === "bash" || tool.execution?.kind === "shell" ? commandOf(tool.args) : "";
   const bad = toolFailed(tool);
   // The number is the actionable half; the state only says that something went
   // wrong, which the colour already says.
@@ -179,6 +215,7 @@ export function ToolCard({
     if (bad) setOpen(null);
   }, [bad]);
   const open = touched ?? start;
+  const sticky = useStickyBody(open);
   // The body of a finished, closed card is most of what a long session holds in
   // the page, so such a card does not mount it; once opened it stays, so what the
   // reader did inside (show all) survives closing it again.
@@ -216,6 +253,7 @@ export function ToolCard({
       {from && <span className="src" title={t("chat.a_tool_provided_by_the", { name: from.server })}>{from.server}</span>}
       {tag && <span className="tag" title={tagHint(tool)}>{tag}</span>}
       {arg && <span className={streaming ? "arg shim" : "arg"} title={streaming ? undefined : prettyArgs(tool.args)}>{arg}</span>}
+      {command && <CommandCopy command={command} />}
       {changes && (
         <span className="tool-delta" aria-label={t("chat.added_lines_added_removed_removed", changes)}>
           <b>+{changes.added}</b><i>−{changes.removed}</i>
@@ -238,7 +276,7 @@ export function ToolCard({
     </>
   );
   const body = (
-    <div className="out">
+    <div className="out" ref={sticky}>
       {tool.argumentNormalization && (
         <section className="activity-call-input">
           <p>{t("chat.argument_format_automatically_normalized")}</p>

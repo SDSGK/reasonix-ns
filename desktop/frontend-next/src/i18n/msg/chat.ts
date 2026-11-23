@@ -109,6 +109,7 @@ export const CHAT: Messages = {
   "chat.conversation_only": { zh: "只回退对话", en: "Conversation only" },
   "chat.conversation_text_cannot_be_searched": { zh: "对话内容暂时搜不了，稍后再试", en: "Conversation text cannot be searched right now; try again shortly" },
   "chat.copy_selected_text": { zh: "复制选中内容", en: "Copy selected text" },
+  "chat.copy_the_command": { zh: "复制这条命令", en: "Copy this command" },
   "chat.copy_this_code": { zh: "复制这段代码", en: "Copy this code" },
   "chat.could_not_fetch_it_try": { zh: "取回失败，请重试", en: "Could not fetch it; try again" },
   "chat.could_not_open_the_browser": { zh: "无法打开浏览器。请重试，或手动打开上面的地址。", en: "Could not open the browser. Retry, or open the address above manually." },

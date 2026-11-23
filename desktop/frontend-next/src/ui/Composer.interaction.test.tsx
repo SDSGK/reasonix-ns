@@ -625,9 +625,13 @@ describe("composer menus", () => {
     expect(document.querySelector('[data-action="git.branch"][data-on]')).toBeNull();
   });
 
-  it("says when the workspace has no repository instead of vanishing", () => {
+  // A workspace that is not a repository has no branch to show, no branch to
+  // switch to, and nothing wrong with git there: the chip that only said so
+  // is gone, and the row is not left with a hole where it stood.
+  it("draws no git chip when the workspace has no repository", () => {
     draw({ git: git({ repo: false }) });
-    expect(screen.getByRole("img", { name: "非 Git 仓库" })).toBeTruthy();
+    expect(screen.queryByRole("img", { name: "非 Git 仓库" })).toBeNull();
+    expect(document.querySelector(".studio-branch")).toBeNull();
   });
 
   it("says git refused a folder that has a repository, with what git printed, and not 'no repository'", () => {

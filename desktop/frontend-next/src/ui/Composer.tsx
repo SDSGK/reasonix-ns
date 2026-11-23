@@ -1,11 +1,11 @@
-import { createElement, useCallback, useEffect, useId, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
+import { useCallback, useEffect, useId, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { ArrowUp } from "lucide-react";
 import { useFolded } from "./usefold";
 import { StopButton } from "./StopButton";
 import { createPortal } from "react-dom";
 import { t } from "../i18n";
 import { reason } from "../i18n/kernel";
-import { keepPasteAsFile, PasteKeep, type PasteChip } from "./pastekeep";
+import { keepPasteAsFile, type PasteChip } from "./pastekeep";
 import type { AgentPort, ChipCall, SessionStatus, WorkspaceGit, WorkspaceInfo } from "../port/port";
 import { Picker } from "./Menu";
 import { BranchChip } from "./BranchChip";
@@ -29,7 +29,6 @@ import { onComposerHintChange, showsComposerHint, useRunningMessageIntent, useSe
 import { runningSendIntent, sendAria, sendHint, sendsOnKey } from "./sendkey";
 import { countLines, pasteIsLong, planTone, planVerb } from "./intake";
 import { nameOf, previewURL } from "./chipfile";
-import { fileAppearance } from "./document/FileTypeIcon";
 import { useIntake } from "./useIntake";
 import type { Dropped } from "./filedrop";
 import type { Quote } from "./cards/SayCard";
@@ -40,9 +39,11 @@ import { useModelFilter, writeModelFilter } from "../state/modelfilter";
 import { useDraft } from "./useDraft";
 import type { Submitted } from "./usesubmit";
 import { touchKeyboard } from "./touchKeyboard";
-import { ImagePreview } from "./ImagePreview";
 import { SideAskButton } from "./SideAskButton";
 import { chipId, chipName, isPicture, quoteBlock, releaseChip, type Chip } from "./composerChips";
+import { ComposerShots } from "./composer_shots";
+import { rememberModel, readRememberedModel } from "./modelMemory";
+import { UNCONFIGURED_REF } from "./ConnectNote";
 
 interface Props {
   worktreeTarget?: HTMLElement | null;
@@ -93,6 +94,10 @@ export function Composer({ port, status, running, queued = false, quote, restore
   const providerOrder = useProviderOrder();
   const modelGroups = useModelFilter();
   const [submitting, setSubmitting] = useState(false);
+  // The model the last conversation in this browser ended on. A new window
+  // that has no model of its own — or one still sitting on the machine's
+  // default — starts on it; a session that named a model keeps it.
+  const [carriedModel, setCarriedModel] = useState<string | null>(null);
   const worktree = useWorktreeSetup(port, fresh && !!git?.repo, status?.workspaceRoot ?? "", onChanged, onTreeChanged, status?.sessionPath ?? "");
   const [setupDraft, setSetupDraft] = useState<{ text: string; files: string[] }>({ text: "", files: [] });
   const setupPhase = worktree.stage?.phase ?? null;
@@ -240,6 +245,9 @@ export function Composer({ port, status, running, queued = false, quote, restore
     if (submittingRef.current || shots.some((c) => c.k === "attachment" && c.state !== "ready")) return;
     const v = text.trim();
     if (!v && shots.length === 0) return;
+    // The note said where the model came from; a message on its way has
+    // answered it.
+    setCarriedModel(null);
     const refs = shots.flatMap((c) => (c.k === "attachment" && c.a ? [c.a.ref] : c.k === "session" ? ["@session:" + c.session] : []));
     const pastes = shots.flatMap((c) => (c.k === "paste" ? [c.saved ? c.saved.pointer.trim() : c.body] : []));
     // A quote is what the question is about, so it leads; a held-back paste is
@@ -402,6 +410,30 @@ export function Composer({ port, status, running, queued = false, quote, restore
   const declared = efforts.length > 0;
   const forcedThinking = forcesThinkingFor(models, status?.modelRef);
   const modelLb = modelLabel(models, status);
+  const carriedAt = useRef(false);
+  useEffect(() => {
+    if (carriedAt.current || !status) return;
+    const remembered = readRememberedModel();
+    if (!remembered) return;
+    const current = status.modelRef;
+    if (current === remembered) return;
+    const named = !!current && current !== UNCONFIGURED_REF;
+    if (named) {
+      // A session that chose a model of its own keeps it. One still on the
+      // machine's default has nothing of its own to lose, but it only gives
+      // it up while the conversation has not begun.
+      if (!models.some((m) => m.ref === current && m.default)) return;
+      if (!fresh) return;
+    }
+    // A model the catalogue no longer offers cannot be chosen; the memory
+    // stays for the day its provider comes back.
+    if (!models.some((m) => m.ref === remembered)) return;
+    carriedAt.current = true;
+    void port.setModel(remembered).then(() => {
+      setCarriedModel(remembered);
+      onChanged();
+    }, onError);
+  }, [status, models, fresh, port, onChanged, onError]);
   // A model switch rebuilds the runtime kernel-side; other controls here may
   // land at once. Each click needs its own pending state: greying the whole
   // shelf says nothing can change while only one control waits on the kernel.
@@ -464,81 +496,7 @@ export function Composer({ port, status, running, queued = false, quote, restore
       )}
       {refine.card}
       {shots.length > 0 && (
-        <ul className="shots">
-          {shots.map((c, i) => (
-            <li
-              className="shot"
-              key={c.id}
-              data-state={c.k === "attachment" ? c.state : undefined}
-              style={{ "--i": i } as React.CSSProperties}
-            >
-              {c.k === "attachment" ? (
-                <>
-                  {isPicture(c) ? (
-                    <ImagePreview src={c.url} name={c.name}
-                      className="thumb"
-                    >
-                      <span aria-hidden="true" style={c.url ? { backgroundImage: `url(${c.url})` } : undefined} />
-                    </ImagePreview>
-                  ) : (
-                    <span className="glyph" aria-hidden="true">{createElement(fileAppearance(c.a?.path ?? c.name).icon, { size: 20, strokeWidth: 1.8 })}</span>
-                  )}
-                  <span className="meta">
-                    <span className="nm" title={c.a?.path ?? c.name}>{c.name}</span>
-                    {c.state === "adding" && <span className="sz live">{t("composer.adding")}</span>}
-                    {c.state === "ready" && <span className="sz">{isPicture(c) ? t("composer.image") : t("common.files")}</span>}
-                    {c.state === "failed" && c.error && <span className="why" title={c.error}>{c.error}</span>}
-                    {c.state === "failed" && (
-        <button
-                        className="retry"
-                        data-action="session.attach"
-                        onClick={() => {
-                          if (!c.blob) return;
-                          setShots((prev) => prev.map((x) => (x === c ? { ...c, state: "adding", error: "" } : x)));
-                          upload(c.id, c.blob);
-                        }}
-                      >
-                        {t("composer.could_not_add_retry")}
-                      </button>
-                    )}
-                  </span>
-                </>
-              ) : c.k === "session" ? (
-                <>
-                  <span className="glyph" aria-hidden="true"><StudioIcon name="history" /></span>
-                  <span className="meta">
-                    <span className="nm" title={c.title}>{c.title}</span>
-                    <span className="sz">{t("composer.past_conversation_read_only_reference")}</span>
-                  </span>
-                </>
-              ) : (
-                <>
-                  <span className="glyph" aria-hidden="true"><StudioIcon name={c.k === "quote" ? "quote" : "file"} /></span>
-                  <span className="meta">
-                    <span className="nm" title={c.body}>{chipName(c)}</span>
-                    <button
-                      className="undo"
-                      onClick={() => {
-                        discard(c);
-                        insert(c.k === "quote" ? quoteBlock(c) : c.body);
-                      }}
-                    >
-                      {t("composer.n_lines_put_it_back", { n: c.lines })}
-                    </button>
-                    {c.k === "paste" && <PasteKeep chip={c} onKeep={keepPaste} />}
-                  </span>
-                </>
-              )}
-              <button
-                className="x"
-                aria-label={t("common.remove_name", { name: chipName(c) })}
-                onClick={() => discard(c)}
-              >
-                <StudioIcon name="close" />
-              </button>
-            </li>
-          ))}
-        </ul>
+        <ComposerShots shots={shots} setShots={setShots} discard={discard} insert={insert} upload={upload} keepPaste={keepPaste} />
       )}
       {/* A warning cannot be the last horizontally scrolling attachment: that
           is exactly where it disappears when there are enough files to matter. */}
@@ -549,13 +507,8 @@ export function Composer({ port, status, running, queued = false, quote, restore
             : t("composer.this_model_does_not_read")}
         </p>
       )}
-      {/* The prompt glyph sits beside the box rather than in it, so it cannot be
-          dragged into a selection of what was typed. */}
       {queueStrip}
       <div className="fmain">
-        <span className="prompt" aria-hidden="true">
-          <StudioIcon name="chevron" />
-        </span>
         <textarea
           data-action-keydown="session.send" data-window-keys=""
           ref={box}
@@ -726,6 +679,12 @@ export function Composer({ port, status, running, queued = false, quote, restore
         )}
         <Policy port={port} status={status} onChanged={onChanged} onBoundary={() => onSettings("tools:sandbox")} />
         <div className="studio-model-group">
+          {carriedModel && (
+            <span className="studio-model-hint" role="status">
+              <StudioIcon name="history" />
+              <span>{t("composer.model_carried_over", { model: modelLabel(models, { modelRef: carriedModel }) })}</span>
+            </span>
+          )}
           <Picker
             wrapClassName="studio-model-control"
             className="mode model-picker"
@@ -741,11 +700,16 @@ export function Composer({ port, status, running, queued = false, quote, restore
             searchAlways
             searchPlaceholder={t("composer.search_models_or_providers")}
             menuTitle={<><b>{t("composer.choose_model")}</b><small>{t("composer.for_future_tasks")}</small></>}
-            onOpen={() => { void modelHealth.check(loadModels()); }}
+            onOpen={() => { setCarriedModel(null); void modelHealth.check(loadModels()); }}
             pending={busy["model"] || busy["effort"] || busy["mode"]}
             asideClassName="studio-effort-menu"
             stayOpen={(ref) => ref !== "__manage-models"}
-            onPick={(ref) => ref === "__manage-models" ? onSettings("providers") : change("model", () => port.setModel(ref))}
+            onPick={(ref) => {
+              setCarriedModel(null);
+              if (ref === "__manage-models") { onSettings("providers"); return; }
+              rememberModel(ref);
+              change("model", () => port.setModel(ref));
+            }}
             aside={status ? (close) => (
               <EffortColumn
                 items={effortMenu(efforts, modelLb, "__effort-declare", status.modes, forcedThinking)}
@@ -771,6 +735,11 @@ export function Composer({ port, status, running, queued = false, quote, restore
         </div>
         <span className="go">
           {running && <StopButton stopping={stopping} onStop={stop} />}
+          {/* The prompt glyph sits beside the send button rather than in the
+              box, so it cannot be dragged into a selection of what was typed. */}
+          <span className="prompt" aria-hidden="true">
+            <StudioIcon name="chevron" />
+          </span>
           <button
             className="btn send"
             aria-label={t(submitting ? "common.sending" : running ? runningIntent === "followup" ? "composer.queue" : "common.steer" : "common.send")}
