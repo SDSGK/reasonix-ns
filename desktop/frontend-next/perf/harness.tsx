@@ -1,4 +1,5 @@
 import "../src/styles/legacy.css";
+import "../src/styles/agentrail.css";
 import "../src/design/design.css";
 import { createRoot } from "react-dom/client";
 import { boot as bootLang } from "../src/i18n";
