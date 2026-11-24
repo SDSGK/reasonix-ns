@@ -14,11 +14,11 @@ interface Props {
   setShots: Dispatch<SetStateAction<Chip[]>>;
   discard: (c: Chip) => void;
   insert: (snippet: string) => void;
-  upload: (id: string, blob: File) => void;
+  onUpload: (id: string, blob: File) => void;
   keepPaste: (chip: PasteChip) => void;
 }
 
-export function ComposerShots({ shots, setShots, discard, insert, upload, keepPaste }: Props) {
+export function ComposerShots({ shots, setShots, discard, insert, onUpload, keepPaste }: Props) {
   return (
     <ul className="shots">
       {shots.map((c, i) => (
@@ -51,7 +51,7 @@ export function ComposerShots({ shots, setShots, discard, insert, upload, keepPa
                     onClick={() => {
                       if (!c.blob) return;
                       setShots((prev) => prev.map((x) => (x === c ? { ...c, state: "adding", error: "" } : x)));
-                      upload(c.id, c.blob);
+                      onUpload(c.id, c.blob);
                     }}
                   >
                     {t("composer.could_not_add_retry")}

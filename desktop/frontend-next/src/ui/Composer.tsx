@@ -496,7 +496,7 @@ export function Composer({ port, status, running, queued = false, quote, restore
       )}
       {refine.card}
       {shots.length > 0 && (
-        <ComposerShots shots={shots} setShots={setShots} discard={discard} insert={insert} upload={upload} keepPaste={keepPaste} />
+        <ComposerShots shots={shots} setShots={setShots} discard={discard} insert={insert} onUpload={upload} keepPaste={keepPaste} />
       )}
       {/* A warning cannot be the last horizontally scrolling attachment: that
           is exactly where it disappears when there are enough files to matter. */}
