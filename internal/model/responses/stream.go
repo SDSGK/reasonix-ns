@@ -491,10 +491,7 @@ const firstByteTimeout = 15 * time.Minute
 // than the idle window; once the stream has spoken, the idle window applies,
 // because from then on silence means the connection died.
 func watchIdle(ctx context.Context, body io.Closer, idle time.Duration, activity, done <-chan struct{}, stalled *atomic.Bool) {
-	wait := firstByteTimeout
-	if idle > wait {
-		wait = idle
-	}
+	wait := max(firstByteTimeout, idle)
 	timer := time.NewTimer(wait)
 	defer timer.Stop()
 	for {
