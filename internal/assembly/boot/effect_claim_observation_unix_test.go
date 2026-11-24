@@ -25,7 +25,7 @@ import (
 )
 
 func TestEffectContendedApprovalCannotProveMutationScope(t *testing.T) {
-	if !sandbox.Available() || !sandbox.EgressSupported() {
+	if !sandboxCanConfine() || !sandbox.EgressSupported() {
 		t.Skip("egress confinement not available on this host")
 	}
 	if _, err := exec.LookPath("curl"); err != nil {

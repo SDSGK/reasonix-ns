@@ -4278,7 +4278,7 @@ model = "x"
 }
 
 func TestBuildAdditionalDirsReachSandboxedBashWriteRoots(t *testing.T) {
-	if runtime.GOOS == "windows" || !sandbox.Available() {
+	if runtime.GOOS == "windows" || !sandboxCanConfine() {
 		t.Skip("requires a Unix sandbox backend")
 	}
 	isolateConfigHome(t)

@@ -92,7 +92,7 @@ func requireSandbox(t *testing.T) {
 	if runtime.GOOS == "windows" {
 		t.Skip("no OS-level bash sandbox on Windows")
 	}
-	if !sandbox.Available() {
+	if !sandboxCanConfine() {
 		t.Skip("no usable OS sandbox backend")
 	}
 }

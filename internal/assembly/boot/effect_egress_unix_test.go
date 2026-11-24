@@ -48,7 +48,7 @@ func (p *egressScriptProvider) Stream(_ context.Context, req provider.Request) (
 // host's refusal rather than as a bare connection error.
 func TestEffectEgressRefusalReachesTheModel(t *testing.T) {
 	t.Parallel()
-	if !sandbox.Available() || !sandbox.EgressSupported() {
+	if !sandboxCanConfine() || !sandbox.EgressSupported() {
 		t.Skip("egress confinement not available on this host")
 	}
 	if _, err := exec.LookPath("curl"); err != nil {
@@ -109,7 +109,7 @@ model = "x"
 // network_egress approval, and a refusal reaches the model as theirs.
 func TestEffectUnlistedHostIsPutToTheUser(t *testing.T) {
 	t.Parallel()
-	if !sandbox.Available() || !sandbox.EgressSupported() {
+	if !sandboxCanConfine() || !sandbox.EgressSupported() {
 		t.Skip("egress confinement not available on this host")
 	}
 	if _, err := exec.LookPath("curl"); err != nil {

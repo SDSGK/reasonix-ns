@@ -18,7 +18,7 @@ import (
 // the forbidden roots come from the config's own composition. Sender identity
 // and message confidentiality both rest on this, so it is asserted end to end.
 func TestAConfinedCommandCannotTouchThePeerSpool(t *testing.T) {
-	if runtime.GOOS == "windows" || !sandbox.Available() {
+	if runtime.GOOS == "windows" || !sandboxCanConfine() {
 		t.Skip("no OS-level bash confinement on this machine")
 	}
 	t.Run("workspace beside the state root", func(t *testing.T) { confinedSpoolCase(t, false) })

@@ -81,7 +81,7 @@ func unjailedDir(t *testing.T) string {
 
 func requireJail(t *testing.T) {
 	t.Helper()
-	if runtime.GOOS == "windows" || !sandbox.Available() {
+	if runtime.GOOS == "windows" || !sandboxCanConfine() {
 		t.Skip("no OS sandbox on this host")
 	}
 }

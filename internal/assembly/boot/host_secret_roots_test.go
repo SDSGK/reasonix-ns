@@ -27,7 +27,7 @@ func TestRuntimeForbidReadRootsCoverServeLaunchTokens(t *testing.T) {
 }
 
 func TestSandboxedShellCannotReadServeLaunchTokens(t *testing.T) {
-	if runtime.GOOS == "windows" || !sandbox.Available() {
+	if runtime.GOOS == "windows" || !sandboxCanConfine() {
 		t.Skip("OS sandbox unavailable")
 	}
 	isolateConfigHome(t)

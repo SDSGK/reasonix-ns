@@ -55,7 +55,7 @@ func TestProjectEnvCannotRedirectAuthorityEndpoints(t *testing.T) {
 	if runtime.GOOS == "windows" {
 		t.Skip("no OS-level sandbox on Windows")
 	}
-	if !sandbox.Available() {
+	if !sandboxCanConfine() {
 		t.Skip("no usable OS sandbox backend")
 	}
 	host := shortSocket(t, "HOST-DAEMON")
@@ -104,7 +104,7 @@ func TestDeniedAuthorityIsNotInheritedThroughADescriptor(t *testing.T) {
 	if runtime.GOOS == "windows" {
 		t.Skip("no OS-level sandbox on Windows")
 	}
-	if !sandbox.Available() {
+	if !sandboxCanConfine() {
 		t.Skip("no usable OS sandbox backend")
 	}
 	if _, err := exec.LookPath("python3"); err != nil {

@@ -171,7 +171,7 @@ func TestEffectProjectConfigCannotWidenWhatToolsReach(t *testing.T) {
 	// The control: bash itself ran, so the denied file is missing because of
 	// the user's rule and not because nothing could run. A Linux host without
 	// a usable bwrap refuses every jailed command, which is the jail kept.
-	if runtime.GOOS != "windows" && !sandbox.Available() {
+	if runtime.GOOS != "windows" && !sandboxCanConfine() {
 		return
 	}
 	if _, err := os.Stat(allowed); err != nil {
