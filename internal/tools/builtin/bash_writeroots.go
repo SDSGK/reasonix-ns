@@ -1,6 +1,7 @@
 package builtin
 
 import (
+	"log/slog"
 	"strings"
 
 	"reasonix/internal/safety/sandbox"
@@ -22,6 +23,12 @@ func (b bash) writeRootNote(wrapped bool) string {
 	for _, d := range sandbox.DroppedWriteRoots(b.sb) {
 		notes = append(notes, "[host] "+d.Code+": "+d.Root+" is not a write root for this command; it "+writeRootDropReason[d.Code]+
 			". Paths under it are writable only where another write root covers them, and writes never follow a link out. The user has to restore it and start a new session to write there.")
+	}
+	if len(notes) == 0 {
+		// A confined command was refused a write and the model was told
+		// nothing about it. Say what the spec held, so the cause is visible
+		// in the run's log instead of only in a debugger.
+		slog.Info("bash: a confined command held no dropped write root", "mode", b.sb.Mode, "roots", b.sb.WriteRoots, "pinned", b.sb.Pins != nil)
 	}
 	return strings.Join(notes, "\n")
 }

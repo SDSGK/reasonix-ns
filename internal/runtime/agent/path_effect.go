@@ -3,6 +3,7 @@ package agent
 import (
 	"context"
 	"errors"
+	"log/slog"
 	"maps"
 	"os"
 	"path/filepath"
@@ -259,6 +260,12 @@ func (a *Agent) stampHostOwned(rec *evidence.Receipt) {
 		if hostOwnedPath(a.writeWorkspaceRoot, p) {
 			rec.HostOwned = append(rec.HostOwned, p)
 		}
+	}
+	if len(rec.Paths) > 0 && len(rec.HostOwned) == 0 {
+		// A receipt wrote paths and none of them was judged the host's own
+		// state, so the host's own ledger would read as the user's change.
+		// Say what it judged against, so the cause is visible in the run's log.
+		slog.Info("agent: no path of a receipt was judged host-owned", "root", a.writeWorkspaceRoot, "paths", rec.Paths)
 	}
 }
 
