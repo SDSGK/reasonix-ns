@@ -34,9 +34,19 @@ try {
   await composer.waitFor({ timeout: 30_000 });
   const text = () => page.evaluate(() => document.body.innerText);
   const count = async (word) => ((await text()).match(new RegExp(word, "g")) ?? []).length;
+  // The page attaches to the pane the host just opened, and a message typed
+  // before that lands on a pane that is not there yet: the studio never sees
+  // it. So a send waits until the provider has actually been asked, and asks
+  // again when the first try went nowhere.
   const send = async (message) => {
-    await composer.fill(message);
-    await composer.press("Enter");
+    const asked = stack.provider.requests.length;
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      await composer.click();
+      await composer.fill(message);
+      await composer.press("Enter");
+      const reached = await until("the Studio to be asked", async () => stack.provider.requests.length > asked, 10_000).then(() => true, () => false);
+      if (reached) return;
+    }
   };
 
   await send("first");
