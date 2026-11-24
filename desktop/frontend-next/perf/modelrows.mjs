@@ -18,7 +18,9 @@ try {
     await page.goto(BASE, { waitUntil: "networkidle" });
     await page.waitForSelector(".app", { timeout: 20000 });
     await page.getByRole("button", { name: "设置", exact: true }).click();
-    await page.locator('[role="tab"][title="模型"]').click();
+    // The section tab carries the section's current value beside its name, so
+    // the title is "模型 · <value>" now: match the name it starts with.
+    await page.locator('[role="tab"][title^="模型"]').click();
     await page.locator('[data-action="settings.page-index"][data-target="providers"]').click();
     await page.getByText("myrelay", { exact: true }).first().click();
     await page.getByText("从服务商读取可用模型").first().click();
