@@ -28,7 +28,7 @@ func TestForegroundBashThroughTheJobManagerKeepsTheSessionWarning(t *testing.T) 
 		t.Fatal(err)
 	}
 	tool := bash{guard: NewSessionDataGuard(root, nil), workDir: root}
-	args := argsJSON(t, map[string]any{"command": "cat " + session})
+	args := argsJSON(t, map[string]any{"command": `cat "` + session + `"`})
 
 	direct, err := tool.Execute(context.Background(), args)
 	if err != nil {
