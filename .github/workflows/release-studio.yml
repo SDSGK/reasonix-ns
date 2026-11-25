@@ -431,10 +431,22 @@ jobs:
           arch="--${{ matrix.ebarch || 'x64' }}"
           rm -rf ../../zip-src ../../dist-zip
           cp -r ../../dist/${{ matrix.unpacked }} ../../zip-src
-          pnpm exec electron-builder --prepackaged ../../zip-src --win zip $arch \
+          # The installer and the portable archive are built at once, and both
+          # need the tools electron-builder downloads (7-Zip, the NSIS
+          # resources). Those land in one cache directory, so the process that
+          # gets there first unpacks them out from under the other, which then
+          # fails on a path that is no longer there. A cache each keeps the
+          # two from sharing it.
+          # The override is taken only when it is an absolute path, so the
+          # runner's temporary directory is resolved by node — which reads it
+          # the way the runner spells it — rather than by the shell.
+          cache_root="$(node -p 'require("path").resolve(process.env.RUNNER_TEMP)')"
+          ELECTRON_BUILDER_CACHE="$cache_root/eb-zip" \
+            pnpm exec electron-builder --prepackaged ../../zip-src --win zip $arch \
             -c.extraMetadata.version="${version#v}" -c.directories.output=../../dist-zip &
           zip_pid=$!
-          pnpm exec electron-builder --prepackaged ../../dist/${{ matrix.unpacked }} --win nsis $arch \
+          ELECTRON_BUILDER_CACHE="$cache_root/eb-nsis" \
+            pnpm exec electron-builder --prepackaged ../../dist/${{ matrix.unpacked }} --win nsis $arch \
             -c.extraMetadata.version="${version#v}"
           wait "$zip_pid"
           mv ../../dist-zip/ReasonixStudio-windows-${{ matrix.goarch }}.zip ../../dist/
@@ -648,10 +660,22 @@ jobs:
           version="${{ needs.resolve.outputs.version }}"
           rm -rf ../../zip-src ../../dist-zip
           cp -r ../../dist/${{ matrix.unpacked }} ../../zip-src
-          pnpm exec electron-builder --prepackaged ../../zip-src --win zip --${{ matrix.ebarch }} \
+          # The installer and the portable archive are built at once, and both
+          # need the tools electron-builder downloads (7-Zip, the NSIS
+          # resources). Those land in one cache directory, so the process that
+          # gets there first unpacks them out from under the other, which then
+          # fails on a path that is no longer there. A cache each keeps the
+          # two from sharing it.
+          # The override is taken only when it is an absolute path, so the
+          # runner's temporary directory is resolved by node — which reads it
+          # the way the runner spells it — rather than by the shell.
+          cache_root="$(node -p 'require("path").resolve(process.env.RUNNER_TEMP)')"
+          ELECTRON_BUILDER_CACHE="$cache_root/eb-zip" \
+            pnpm exec electron-builder --prepackaged ../../zip-src --win zip --${{ matrix.ebarch }} \
             -c.extraMetadata.version="${version#v}" -c.directories.output=../../dist-zip &
           zip_pid=$!
-          pnpm exec electron-builder --prepackaged ../../dist/${{ matrix.unpacked }} --win nsis --${{ matrix.ebarch }} \
+          ELECTRON_BUILDER_CACHE="$cache_root/eb-nsis" \
+            pnpm exec electron-builder --prepackaged ../../dist/${{ matrix.unpacked }} --win nsis --${{ matrix.ebarch }} \
             -c.extraMetadata.version="${version#v}"
           wait "$zip_pid"
           mv ../../dist-zip/ReasonixStudio-windows-${{ matrix.arch }}.zip ../../dist/
