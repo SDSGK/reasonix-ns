@@ -18,8 +18,8 @@ try {
     await page.waitForSelector(".app");
     await page.locator('.navbtn[aria-label="文件"]').first().click();
     await page.waitForSelector(".workbench-filelist button");
-    await page.getByText("README.md").first().click();
-    await page.getByRole("button", { name: "编辑", exact: true }).click();
+    await page.locator(".workbench-filelist button").filter({ hasText: "README.md" }).click();
+    await page.locator('[data-action="workbench.mode"][data-value="file"]').click();
     await page.waitForSelector(".cm-content");
     await page.locator(".cm-content").click();
     for (const chord of ["Control+f", "Meta+f"]) {
