@@ -1240,9 +1240,14 @@ jobs:
           # flag, and a self-update cannot replace it, so the body says which.
           if [ "$HAS_APPLE" = "true" ]; then
             macos='**macOS** 已用 Developer ID 签名并公证，打开时不需要清除隔离属性。'
+            # The backticks are Markdown code spans for the release body, not
+            # command substitution; the single quotes keep them literal.
+            # shellcheck disable=SC2016
             selfupdate='三个平台都能自更新：Linux 的 `.deb` 走自己的包（`.rpm` 的自更新尚未提供，请手动下载新包），Windows 运行下一个安装器，macOS 替换自身 bundle。'
           else
+            # shellcheck disable=SC2016
             macos='**macOS 包未做 Developer ID 签名**（ad-hoc 签名）：首次打开需要右键「打开」，或执行 `xattr -dr com.apple.quarantine "/Applications/Reasonix Studio.app"`。'
+            # shellcheck disable=SC2016
             selfupdate='Linux 的 `.deb` 走自己的包（`.rpm` 的自更新尚未提供，请手动下载新包），Windows 运行下一个安装器；**macOS 的自动更新在未签名的包上不可用**，请手动下载新版本替换。'
           fi
           {
