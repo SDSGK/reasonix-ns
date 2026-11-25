@@ -29,6 +29,15 @@ func (b bash) confinementNotes(out string, wrapped bool, egressToken string) str
 	return appendSessionDataHint(out, b.egressNote(egressToken))
 }
 
+// foregroundNotes is what a foreground command's result carries besides the
+// command's own output: the host's account of what the sandbox refused, the
+// session-data guard's warning, and the NUL note. Every foreground path
+// assembles the same text, so a command that ran under the job manager is
+// told what a direct run tells it.
+func (b bash) foregroundNotes(out string, wrapped bool, egressToken, command string, nul nulWatch) string {
+	return appendSessionDataHint(appendSessionDataHint(b.confinementNotes(out, wrapped, egressToken), b.guard.CommandHint(b.workDir, command)), nul.note())
+}
+
 // gitMetadataNote is the host's account of a confined command refused at Git
 // metadata the sandbox protects. The OS error alone reads as an ordinary
 // permission problem, and git reports some refused config writes yet exits 0,

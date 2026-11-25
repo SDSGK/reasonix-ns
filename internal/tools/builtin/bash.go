@@ -291,6 +291,10 @@ func (b bash) ExecuteDetailed(ctx context.Context, args json.RawMessage) (tool.D
 			if childEx != nil {
 				runEx = childEx
 			}
+			// The notes belong to the command's result, not to the path that
+			// ran it: a command under the job manager is told what a direct
+			// run tells it.
+			runOut = b.foregroundNotes(runOut, wrapped, prepared.EgressToken, p.Command, nul)
 			fmt.Fprint(out, runOut)
 			return "", runErr
 		}, jobs.WithPresentation(p.Description, p.Command))
@@ -316,7 +320,7 @@ func (b bash) ExecuteDetailed(ctx context.Context, args json.RawMessage) (tool.D
 	mergeRunInto(ex, runEx)
 	ex.DurationMs = time.Since(start).Milliseconds()
 	return tool.DetailedResult{
-		Output:    appendSessionDataHint(appendSessionDataHint(b.confinementNotes(out, wrapped, prepared.EgressToken), b.guard.CommandHint(b.workDir, p.Command)), nul.note()),
+		Output:    b.foregroundNotes(out, wrapped, prepared.EgressToken, p.Command, nul),
 		Execution: ex,
 	}, err
 }
