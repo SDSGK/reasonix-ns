@@ -116,6 +116,12 @@ func (before pathSnapshot) since() (affected, created []string) {
 		if now == was.pathState {
 			continue
 		}
+		// The host keeps its own state in the workspace and writes there while
+		// a call runs, so what changed there is the host's bookkeeping. A
+		// directory that only holds that state is no work product either.
+		if hostStatePath(before.root, was.path) {
+			continue
+		}
 		affected = append(affected, was.path)
 		if !was.exists && now.exists {
 			created = append(created, was.path)
@@ -123,6 +129,9 @@ func (before pathSnapshot) since() (affected, created []string) {
 	}
 	for _, path := range workspaceTopLevel(before.root) {
 		if _, watched := before.state[evidence.NormalizePath(path)]; watched {
+			continue
+		}
+		if hostStatePath(before.root, path) {
 			continue
 		}
 		affected = append(affected, path)
@@ -484,6 +493,12 @@ func (a *Agent) settleUnchangedWorkspace(ctx context.Context, rec *evidence.Rece
 	if !ok {
 		return
 	}
+	// The host keeps its own state in the workspace and writes there while the
+	// call runs, so what the walk sees there is the host's bookkeeping, not the
+	// call's work. Those paths never name the call's change.
+	changed = slices.DeleteFunc(changed, func(p string) bool {
+		return a.hostOwnsState(p)
+	})
 	whole := true
 	if scope := scopedGrant(ctx); scope != nil && len(changed) > 0 {
 		// Inside a run's own declared paths a change is taken as that run's:

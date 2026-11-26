@@ -61,10 +61,12 @@ func (a *Agent) observeReceiptMutation(ctx context.Context, rec *evidence.Receip
 	} else if rec.Success {
 		rec.CriteriaRewritten = plan.criteriaRewritten
 	}
-	a.stampHostOwned(rec)
 	if attributable {
 		a.settleUnchangedWorkspace(ctx, rec, plan)
 	}
+	// The stamp comes last: every path the receipt names is then judged
+	// against the host's own state, including the ones the walk just added.
+	a.stampHostOwned(rec)
 }
 
 // notifyToolHooks lets success and failure hooks observe a finished call. The
