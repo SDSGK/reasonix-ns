@@ -18,7 +18,7 @@ try {
     await page.evaluate((size) => document.documentElement.style.setProperty('--fs-scale', String(size)), scale);
     const sections = await page.locator('.prefs-nav [role="tab"]').evaluateAll((tabs) => tabs.map((tab) => tab.dataset.value));
     for (const section of sections) {
-      await page.locator(`.prefs-nav [data-value="${section}"]`).click();
+      await page.locator(`.prefs-nav [role="tab"][data-value="${section}"]`).click();
       await page.waitForTimeout(200);
       const geometry = await page.locator('.prefs-screen').evaluate((root) => {
         const sheet = root.querySelector('.prefs-sheet').getBoundingClientRect();

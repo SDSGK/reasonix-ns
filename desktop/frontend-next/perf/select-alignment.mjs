@@ -14,7 +14,7 @@ try {
     await page.addInitScript((value) => localStorage.setItem("rx-lang", value), language);
     await page.goto(`${base}?pref=${language}&turns=1`, { waitUntil: "networkidle" });
     await page.locator('[data-action="chrome.settings"]').click();
-    await page.locator('.prefs-nav [data-value="common"]').click();
+    await page.locator('.prefs-nav .prefs-tab[data-value="common"]').click();
     const select = page.locator('[data-action="appearance.language"]');
     await select.waitFor();
     await page.setViewportSize({ width, height: 900 });

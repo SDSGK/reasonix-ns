@@ -14,7 +14,7 @@ try {
       if (state === "rollback") url.searchParams.set("rollback", "1");
       await page.goto(url.href, { waitUntil: "networkidle" });
       await page.locator('[data-action="chrome.settings"]').click();
-      await page.locator('.prefs-nav [data-value="versions"]').click();
+      await page.locator('.prefs-nav .prefs-tab[data-value="account"]').click();
       await page.waitForSelector(".vrow");
       if (state !== "idle") await page.waitForSelector(".vrow .sa[data-keep]");
       await page.evaluate(() => document.fonts.ready);

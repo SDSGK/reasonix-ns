@@ -16,7 +16,7 @@ try {
     await page.goto(`${base}?pref=${language}&turns=1`, { waitUntil: "networkidle" });
     assert.deepEqual(errors, [], "the browser fixture and its styles load successfully");
     await page.locator('[data-action="chrome.settings"]').evaluate((button) => button.click());
-    await page.locator('.prefs-nav [data-value="model"]').click();
+    await page.locator('.prefs-nav .prefs-tab[data-value="model"]').click();
     await page.getByText("myrelay", { exact: true }).first().click();
     const form = page.locator(".addp[data-edit]");
     await form.locator('.token-limits input').first().fill("1600000");
