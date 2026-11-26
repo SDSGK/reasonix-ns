@@ -23,7 +23,7 @@ for (const scheme of ["light", "dark"]) {
     await page.waitForTimeout(500);
     await page.evaluate(() => [...document.querySelectorAll("button")].find((x) => /备份原文件并修复/.test(x.textContent))?.click());
     await page.waitForTimeout(400);
-    await page.evaluate(() => document.querySelector('[role="tab"][title="模型"]')?.click());
+    await page.evaluate(() => document.querySelector('.prefs-nav .prefs-tab[data-value="model"]')?.click());
     await page.evaluate(() => document.querySelector('[data-action="settings.page-index"][data-target="providers"]')?.click());
     await page.waitForSelector(".pdetail", { state: "attached" });
     await page.evaluate(() => [...document.querySelectorAll("button,li,a")].find((x) => /myrelay-work/.test(x.textContent) && x.textContent.length < 80)?.click());

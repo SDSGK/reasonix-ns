@@ -18,7 +18,7 @@ try {
     await page.goto(`${BASE}?twoports=1`, { waitUntil: "networkidle" });
     await page.waitForSelector(".app", { timeout: 20000 });
     await page.getByRole("button", { name: "设置", exact: true }).click();
-    await page.locator('[role="tab"][title="模型"]').click();
+    await page.locator('.prefs-nav .prefs-tab[data-value="model"]').click();
     await page.locator('[data-action="settings.page-index"][data-target="providers"]').click();
     await page.waitForSelector('[data-action-click="provider.select"]');
     const text = await page.evaluate(() => [...document.querySelectorAll('[data-action-click="provider.select"]')].map((b) => b.textContent ?? ""));

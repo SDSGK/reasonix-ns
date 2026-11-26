@@ -46,9 +46,11 @@ for (const sc of SCENES) {
   const views = [];
   if (sc.tabs) {
     await page.evaluate(() => document.querySelector('[data-action="chrome.settings"]')?.click());
-    await page.waitForSelector(".prefs-nav button");
-    const n = await page.evaluate(() => document.querySelectorAll(".prefs-nav button").length);
-    for (let i = 0; i < n; i++) views.push(async () => { await page.evaluate((k) => document.querySelectorAll(".prefs-nav button")[k].click(), i); });
+    await page.waitForSelector(".prefs-nav .prefs-tab");
+    // The list folds, so its buttons come and go: the sections are named and
+    // stable, and the guard visits them by name.
+    const sections = await page.evaluate(() => [...document.querySelectorAll(".prefs-nav .prefs-tab")].map((tab) => tab.dataset.value));
+    for (const section of sections) views.push(async () => { await page.evaluate((v) => document.querySelector(`.prefs-nav .prefs-tab[data-value="${v}"]`)?.click(), section); });
   } else views.push(async () => { await sc.act?.(page); });
   let total = 0;
   const holes = new Map();

@@ -20,15 +20,17 @@ for (const scheme of ["light", "dark"]) {
     await page.waitForSelector(".app");
     await page.evaluate(() => document.fonts.ready);
     await page.evaluate(() => document.querySelector('[data-action="chrome.settings"]')?.click());
-    await page.waitForSelector(".prefs-nav button");
-    const tabs = await page.evaluate(() => document.querySelectorAll(".prefs-nav button").length);
+    await page.waitForSelector(".prefs-nav .prefs-tab");
+    // The list folds, so its buttons come and go: the sections are named and
+    // stable, and the guard visits them by name.
+    const sections = await page.evaluate(() => [...document.querySelectorAll(".prefs-nav .prefs-tab")].map((tab) => tab.dataset.value));
     const squeezed = [];
-    for (let i = 0; i < tabs; i++) {
-      const id = await page.evaluate((n) => {
-        const b = document.querySelectorAll(".prefs-nav button")[n];
+    for (const section of sections) {
+      const id = await page.evaluate((v) => {
+        const b = document.querySelector(`.prefs-nav .prefs-tab[data-value="${v}"]`);
         b.click();
         return b.id || b.textContent.trim().slice(0, 12);
-      }, i);
+      }, section);
       await page.waitForTimeout(250);
       const bad = await page.evaluate((floor) =>
         [...document.querySelectorAll(".lrow > .tx, .fold-row > .tx, .storage .item > .l, .srv .load > .hn")]

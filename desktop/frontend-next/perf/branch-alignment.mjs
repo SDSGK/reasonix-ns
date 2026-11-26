@@ -6,7 +6,7 @@ const browser = await chromium.launch();
 try {
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 }, reducedMotion: "reduce" });
   for (const locale of ["zh", "en"]) {
-    for (const git of ["none", "repo"]) {
+    for (const git of ["refused", "repo"]) {
       await page.goto(`${BASE}?pref=${locale}&turns=2&git=${git}`, { waitUntil: "networkidle" });
       await page.waitForSelector(".studio-branch .lb");
       await page.evaluate(() => document.fonts.ready);
@@ -24,7 +24,7 @@ try {
         if (!aligned) fails.push(name);
       }
       await page.focus(".studio-branch");
-      if (git === "none") await page.waitForSelector('.studio-branch-card[role="tooltip"]', { state: "visible" });
+      if (git === "refused") await page.waitForSelector('.studio-branch-card[role="tooltip"]', { state: "visible" });
       if (git === "repo") {
         await page.click(".studio-branch");
         await page.waitForSelector('.workspace-palette[role="dialog"]', { state: "visible" });

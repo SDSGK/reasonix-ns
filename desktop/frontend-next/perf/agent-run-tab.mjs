@@ -41,18 +41,20 @@ for (const scheme of ["light", "dark"]) {
     window.__feed({ kind: "turn_started", authoredTurn: 1, msgIndex: 0, text: "go" });
     window.__feed({ kind: "text", text: "Both reviews are done." });
   });
-  await page.waitForSelector(".studio-deckchip");
-  await page.locator('[data-action="deck.agents"]').hover();
-  await page.locator('.studio-deck-pop .ag[data-action="agent.open"][data-target]').first().waitFor();
-  const rows = await page.locator(".studio-deck-pop .ag").count();
-  check(`${scheme}: the deck lists both delegations`, rows === 2, `rows=${rows}`);
+  // The deck hangs from the chrome's badge now: the delegate rail names the
+  // session's sub-agents, and the badge opens the list of them.
+  await page.waitForSelector(".agentrail-badge");
+  await page.locator(".agentrail-badge").first().click();
+  await page.locator('.agentrail-float .ag[data-action="agent.open"][data-target]').first().waitFor();
+  const named = await page.locator(".agentrail-float .ag").evaluateAll((els) => els.map((e) => e.getAttribute("aria-label") || ""));
+  check(`${scheme}: the deck lists both delegations`, named.some((n) => n.includes("security-review")) && named.some((n) => n.includes("other")), named.join(" | "));
 
-  await page.locator('.studio-deck-pop .ag', { hasText: "security-review" }).click();
+  await page.locator('.agentrail-float .ag', { hasText: "security-review" }).first().click();
   await page.locator('.workbench-tab-pick', { hasText: "security-review" }).waitFor();
-  await page.locator(".agentrun .txt", { hasText: "rotated on every refresh" }).waitFor();
+  await page.locator(".agentrun", { hasText: "rotated on every refresh" }).waitFor();
   await page.waitForFunction(() => !document.querySelector(".agentrun")?.textContent.includes("## Finding"));
   const text = await page.locator(".agentrun").evaluate((el) => el.textContent);
-  check(`${scheme}: the run opens as a workbench tab, not a dialog`, (await page.locator(".agent-tx").count()) === 0);
+  check(`${scheme}: the run opens as a workbench tab, not a dialog`, (await page.locator(".workbench .agentrun").count()) === 1);
   check(`${scheme}: it shows the model, the state and the final answer`, /deepseek-v4-pro/.test(text) && /Completed|Done/.test(text) && /rotated on every refresh/.test(text), text.slice(0, 160));
   check(`${scheme}: the user's task is in it and the tool steps are folded under one line`, /Audit the session code/.test(text) && (await page.locator(".agentrun .activity-group").count()) === 1 && (await page.locator(".agentrun .activity-group[open]").count()) === 0);
   await page.locator(".agentrun .activity-group > summary").click();
@@ -67,10 +69,12 @@ for (const scheme of ["light", "dark"]) {
   if (SHOTS) await page.screenshot({ path: `${SHOTS}-tab-${scheme}.png` });
   check(`${scheme}: the record stays inside the workbench column`, box.flowRight <= box.wbRight + 1 && box.flowLeft >= box.wbLeft - 1, JSON.stringify(box));
 
-  await page.locator('[data-action="deck.agents"]').hover();
-  await page.locator('.studio-deck-pop .ag', { hasText: "other" }).click();
-  await page.locator(".agent-tx").waitFor();
-  check(`${scheme}: a call with no run keeps the full-record dialog`, true);
+  // The deck hangs from the badge, so it opens again from there. A delegate the
+  // kernel named no run for has no record of its own to open.
+  await page.locator(".agentrail-badge").first().click();
+  await page.locator('.agentrail-float .ag', { hasText: "other" }).click();
+  const tabs = await page.locator(".workbench-tab-pick").evaluateAll((els) => els.map((e) => e.textContent.trim()));
+  check(`${scheme}: a delegate with no run of its own opens no record`, tabs.length === 1, tabs.join(" | "));
   await page.close();
 }
 await browser.close();

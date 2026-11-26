@@ -15,16 +15,9 @@ for (const scheme of ["light", "dark"]) {
     const page = await browser.newPage({ viewport: { width, height: 844 }, colorScheme: scheme, reducedMotion: "reduce" });
     page.setDefaultTimeout(8000);
     page.on("pageerror", (e) => fails.push("page error: " + e.message));
-    await page.goto(`${BASE}?pref=en`, { waitUntil: "networkidle" });
+    await page.goto(`${BASE}?pref=en&jobs=3`, { waitUntil: "networkidle" });
     await page.waitForSelector(".app");
-    await page.evaluate(() => {
-      const args = '{"description":"review","subagent_type":"security-review"}';
-      window.__feed({ kind: "turn_started", authoredTurn: 1, msgIndex: 0, text: "go" });
-      window.__feed({ kind: "tool_dispatch", tool: { id: "a1", name: "task", profile: { name: "security-review" }, args } });
-      window.__feed({ kind: "tool_result", tool: { id: "a1", name: "task", profile: { name: "security-review" }, args, output: "done" } });
-      window.__feed({ kind: "text", text: "x" });
-    });
-    await page.waitForSelector(".studio-deckchip");
+    await page.waitForSelector('.studio-deckchip[data-action="deck.jobs"]');
     await page.waitForTimeout(400);
     const m = await page.evaluate(() => {
       const rail = document.querySelector(".studio-meterrail").getBoundingClientRect();
@@ -35,7 +28,7 @@ for (const scheme of ["light", "dark"]) {
       const out = [...document.querySelectorAll(".studio-meterrail > *, .studio-deck-anchor > .studio-deckchip")]
         .filter((el) => live(el) && live(el).right > rail.right + 1)
         .map((el) => `${String(el.className).split(" ")[0] || el.tagName} ${Math.round(live(el).right - rail.right)}px`);
-      const chip = document.querySelector(".studio-deckchip");
+      const chip = document.querySelector('.studio-deckchip[data-action="deck.jobs"]');
       return { out, chipName: chip.getAttribute("aria-label") || chip.textContent.trim(), count: chip.querySelector("b")?.textContent };
     });
     check(`${scheme} ${width}px: nothing in the meter rail passes its right edge`, m.out.length === 0, m.out.slice(0, 3).join("; "));
