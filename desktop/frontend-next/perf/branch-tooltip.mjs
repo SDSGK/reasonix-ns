@@ -11,13 +11,15 @@ try {
     for (const zoom of [1]) {
       const page = await browser.newPage({ viewport: { width: 390, height: 844 }, reducedMotion: "reduce" });
       page.on("pageerror", (error) => fails.push(error.message));
-      await page.goto(`${base}?pref=${language}&turns=2&git=none&zoom=${zoom}`, { waitUntil: "networkidle" });
+      await page.goto(`${base}?pref=${language}&turns=2&git=refused&zoom=${zoom}`, { waitUntil: "networkidle" });
       const more = page.locator(".compose .turn-more");
       if (await more.isVisible()) await more.click();
       const chip = page.locator(".studio-branch[data-norepo]");
       await chip.waitFor();
       await page.evaluate(() => document.fonts.ready);
-      const label = language === "en" ? "No Git repository" : "非 Git 仓库";
+      // The chip names the fact it stands for: the folder carries a .git and
+      // git refused to open it.
+      const label = language === "en" ? "Git refused to open it" : "Git 拒绝打开";
       const accessible = await chip.and(page.getByRole("img", { name: label, exact: true })).count() === 1;
       const hiddenLabel = await chip.locator(".lb").evaluate((element) => getComputedStyle(element).display === "none");
       const identity = `${language}/390px/zoom=${zoom}/accessible-name`;

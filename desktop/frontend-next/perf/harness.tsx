@@ -272,7 +272,13 @@ class BenchPort extends MockPort {
 
   async workspaceGit() {
     const git = await super.workspaceGit();
-    return query.get("git") === "none" ? { ...git, repo: false } : git;
+    // git=none is a folder that is not a repository at all — nothing is drawn
+    // for it. git=refused is the other fact: the folder carries a .git and
+    // git refused to open it, which is worth the reader's attention.
+    const mode = query.get("git");
+    if (mode === "none") return { ...git, repo: false };
+    if (mode === "refused") return { ...git, repo: false, absent: "refused" as const };
+    return git;
   }
 
   async appearance() {

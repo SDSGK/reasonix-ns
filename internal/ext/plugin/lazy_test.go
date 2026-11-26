@@ -377,11 +377,8 @@ func TestAddWithLifecycleCoalescesConcurrentSameServer(t *testing.T) {
 func TestLazyCacheHitSlowStartupContinuesInBackground(t *testing.T) {
 	redirectCache(t)
 	spec := helperSpec()
-	// The handshake cap and the wait below are generous on purpose: the helper
-	// is a fresh process, so a loaded runner can need more than the short
-	// budget the model-facing wait uses. The background path this test pins
-	// down is the one where the first call gives up early — not one where the
-	// handshake itself is cut short.
+	// The cap and the wait below leave the helper room: a loaded runner can
+	// need more than the short budget the model-facing wait uses.
 	spec.StartupTimeout = 30 * time.Second
 	spec.Env["GO_WANT_HELPER_INIT_MS"] = "200"
 	writeMockCache(t, spec)
