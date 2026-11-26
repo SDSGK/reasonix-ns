@@ -24,12 +24,16 @@ try {
     assert.equal(await page.locator('.studio-feedback').count(), 0, 'the retired feedback row is not drawn');
     if (hidden) {
       assert.equal(await root.locator('.studio-tools-toggle').count(), 0);
+      assert.equal(await page.getByRole('menu', { name: '侧栏入口' }).count(), 0);
+    } else {
+      // The menu opens on a click of the entry button and never on a hover, so
+      // a pointer that merely passes over the rail leaves it shut.
+      const toggle = root.locator('.studio-tools-toggle');
+      const menu = page.getByRole('menu', { name: '侧栏入口' });
       await root.hover();
       await page.waitForTimeout(250);
       assert.equal(await page.getByRole('menu', { name: '侧栏入口' }).count(), 0);
-    } else {
-      await root.hover();
-      const menu = page.getByRole('menu', { name: '侧栏入口' });
+      await toggle.click();
       await menu.waitFor();
       assert.deepEqual(await menu.locator('button > span').allTextContents(), ['远程', '用量', '文件', '工具与权限', '扩展', '记忆']);
       const item = menu.getByRole('menuitem', { name: '文件' });
@@ -40,9 +44,13 @@ try {
       assert.ok(bounds.x >= 0 && bounds.x + bounds.width <= width && bounds.y >= 0 && bounds.y + bounds.height <= 900);
       assert.equal(await menu.locator('button svg.lucide').count(), 6);
       await page.screenshot({ path: `perf/shots/sidebar-tools-${colorScheme}-${width}.png` });
+      // The card stays open when the pointer walks away, and a click away is
+      // what shuts it.
       await page.mouse.move(width - 5, 10);
+      await page.waitForTimeout(220);
+      assert.ok(await menu.isVisible(), 'the card stays open when the pointer leaves it');
+      await page.keyboard.press('Escape');
       await menu.waitFor({ state: 'hidden' });
-      const toggle = root.locator('.studio-tools-toggle');
       await toggle.focus();
       await page.keyboard.press('Enter');
       await page.waitForFunction(() => document.activeElement?.getAttribute('role') === 'menuitem');
