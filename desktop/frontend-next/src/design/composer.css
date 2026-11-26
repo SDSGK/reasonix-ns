@@ -109,6 +109,12 @@
 .studio-meterrail { left: 0; right: 0; padding: 0 2px; gap: 0; color: var(--faint); font: var(--w-reg) var(--fs-micro)/1 var(--ui); }
 .studio-meterrail b { color: var(--muted); font-weight: var(--w-med); }
 .studio-meterrail .studio-icon { width: 12px; height: 12px; color: var(--faint); }
+/* A chip that cannot have all of it gives up its label and keeps its count: the
+   rail is one row, and a chip that reached past the rail's right edge would be
+   cut by the window. */
+.studio-meterrail .studio-deck-anchor { min-width: 0; }
+.studio-meterrail .studio-deckchip { flex: 0 1 auto; min-width: 0; }
+.studio-meterrail .studio-deckchip > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 @container conversation (max-width: 720px) {
   .compose .studio-mode-picker { width: 28px; justify-content: center; padding-inline: 0; }
   .compose .studio-mode-picker > span:not(.studio-sr-label), .compose .studio-mode-picker > .studio-icon:last-child { display: none; }
