@@ -16,7 +16,7 @@
     "file-size": 18054,
     "flat-view": 0,
     "frontend-parity": 13,
-    "function-size": 2413,
+    "function-size": 2373,
     "layer-order": 0,
     "layering": 0,
     "marker": 0,
@@ -1427,7 +1427,6 @@
     },
     "internal/tools/builtin/bash.go": {
       "essay": 14,
-      "function-size": 40,
       "orphan": 1
     },
     "internal/tools/builtin/bash_delete.go": {

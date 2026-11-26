@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"os/exec"
 	"runtime"
 	"slices"
@@ -223,50 +222,23 @@ func (b bash) ExecuteDetailed(ctx context.Context, args json.RawMessage) (tool.D
 		return refusedBeforeLaunch(ex, start, tool.ShellPhasePreflight, err)
 	}
 
+	launch := bashLaunch{
+		params:   p,
+		shell:    sh,
+		argv:     argv,
+		wrapped:  wrapped,
+		cmdEnv:   cmdEnv,
+		probe:    probe,
+		prepared: prepared,
+		nul:      nul,
+	}
+
 	if p.RunInBackground {
-		jm, ok := jobs.FromContext(ctx)
-		if !ok {
-			ex.State = tool.ShellStateNotRun
-			ex.FailurePhase = tool.ShellPhaseDependency
-			ex.MutationRisk = tool.ShellMutationNotStarted
-			ex.DurationMs = time.Since(start).Milliseconds()
-			return tool.DetailedResult{Execution: ex}, fmt.Errorf("background execution is not available in this context")
+		res, moved, rerr := b.runBackground(ctx, launch, lease, ex, start)
+		if moved {
+			releaseLease = false
 		}
-		workDir := b.workDir
-		// Transfer lease ownership to the job closure; it releases when the
-		// background process ends (including start failures inside the job).
-		jobLease := lease
-		releaseLease = false
-		// The job runs under the manager's session context (no foreground timeout), so it
-		// survives this turn; its combined output streams to the job buffer.
-		job := jm.StartForSession(jobs.SessionFromContext(ctx), "bash", commandPreview(p.Command), func(jobCtx context.Context, out io.Writer) (string, error) {
-			if jobLease != nil {
-				defer jobLease.Release()
-			}
-			cmd := exec.CommandContext(jobCtx, argv[0], argv[1:]...)
-			cmd.Dir = workDir
-			cmd.Env = cmdEnv
-			cmd.WaitDelay = bashWaitDelay
-			cmd.Stdout = out
-			cmd.Stderr = out
-			tracked, runErr := runShellProcess(jobCtx, cmd, sh, p.Command, shouldTrackShellProcess(wrapped, sh, p.Command, p.PreserveBackgroundProcesses))
-			if shouldReapAfterRun(jobCtx, sh, p.Command, p.PreserveBackgroundProcesses) {
-				reapShellProcess(cmd, tracked) // reap process-group stragglers the job left running (#3702)
-			}
-			b.writeEgressNote(out, prepared.EgressToken)
-			return "", jobExit(normalizeBashRunError(jobCtx, runErr, p.PreserveBackgroundProcesses))
-		}, jobs.WithPresentation(p.Description, p.Command))
-		msg := fmt.Sprintf("Started background job %q. It keeps running across turns; read new output with bash_output(job_id=%q), wait for it with wait, or stop it with kill_shell(job_id=%q).", job.ID, job.ID, job.ID)
-		msg += resumeNote(ctx, jm)
-		// Background start is not a completed execution: completion is reported
-		// later by bash_output/wait. Do not masquerade as success with exit 0.
-		ex.State, ex.JobID = tool.ShellStateBackgroundStarted, job.ID
-		ex.MutationRisk = tool.ShellMutationUnknown
-		ex.DurationMs = time.Since(start).Milliseconds()
-		return tool.DetailedResult{
-			Output:    appendSessionDataHint(msg, b.guard.CommandHint(b.workDir, p.Command)),
-			Execution: ex,
-		}, nil
+		return res, rerr
 	}
 
 	// Foreground calls run through the job manager when one is attached: the
@@ -276,44 +248,11 @@ func (b bash) ExecuteDetailed(ctx context.Context, args json.RawMessage) (tool.D
 	// background, with its completion folded into a later turn. Without a
 	// manager the direct foreground path runs unchanged.
 	if jm, jok := jobs.FromContext(ctx); jok {
-		const syncWindow = 5 * time.Second
-		jobLease := lease
-		releaseLease = false
-		var runOut string
-		var runEx *tool.ShellExecution
-		var runErr error
-		job := jm.StartForSession(jobs.SessionFromContext(ctx), "bash", commandPreview(p.Command), func(jobCtx context.Context, out io.Writer) (string, error) {
-			if jobLease != nil {
-				defer jobLease.Release()
-			}
-			var childEx *tool.ShellExecution
-			runOut, childEx, runErr = b.runForegroundDetailed(jobCtx, p, sh, argv, wrapped, cmdEnv, probe)
-			if childEx != nil {
-				runEx = childEx
-			}
-			// The notes belong to the command's result, not to the path that
-			// ran it: a command under the job manager is told what a direct
-			// run tells it.
-			runOut = b.foregroundNotes(runOut, wrapped, prepared.EgressToken, p.Command, nul)
-			fmt.Fprint(out, runOut)
-			return "", runErr
-		}, jobs.WithPresentation(p.Description, p.Command))
-		select {
-		case <-job.Done():
-			// Settled inside the window: return exactly like a direct
-			// foreground run — the model cannot tell the difference.
-			mergeRunInto(ex, runEx)
-			ex.DurationMs = time.Since(start).Milliseconds()
-			return tool.DetailedResult{Output: runOut, Execution: ex}, runErr
-		case <-time.After(syncWindow):
-			// Still running past the window: hand back the job id, keep the
-			// command alive, and let its completion arrive on its own.
-			ex.DurationMs = time.Since(start).Milliseconds()
-			ex.State, ex.JobID = tool.ShellStateBackgroundStarted, job.ID
-			msg := fmt.Sprintf("Started background job %q (auto-promoted to the background after %s). It keeps running; read new output with bash_output(job_id=%q), wait for it with wait, or stop it with kill_shell(job_id=%q). Its completion is reported on its own.", job.ID, syncWindow, job.ID, job.ID)
-			msg += resumeNote(ctx, jm)
-			return tool.DetailedResult{Output: appendSessionDataHint(msg, b.guard.CommandHint(b.workDir, p.Command)), Execution: ex}, nil
+		res, moved, rerr := b.runJobForeground(ctx, jm, launch, lease, ex, start)
+		if moved {
+			releaseLease = false
 		}
+		return res, rerr
 	}
 
 	out, runEx, err := b.runForegroundDetailed(ctx, p, sh, argv, wrapped, cmdEnv, probe)

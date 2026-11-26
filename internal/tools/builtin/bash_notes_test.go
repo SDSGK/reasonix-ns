@@ -13,11 +13,9 @@ import (
 )
 
 // A foreground call that settles inside the sync window must carry the same
-// notes as a direct foreground run: the host's account of what the sandbox
-// refused, the session-data warning, and the NUL note. The job-manager path
-// used to return the command's bare output and drop them, so a model whose
-// calls run under a job manager never learned why a confined command was
-// refused, and the boot suite could not see the refusal attributed.
+// notes as a direct foreground run: the sandbox's refusal, the session-data
+// warning, and the NUL note. The job-manager path used to drop them, so a
+// model whose calls run under a manager never learned why a call was refused.
 func TestForegroundBashThroughTheJobManagerKeepsTheSessionWarning(t *testing.T) {
 	root := testenv.TempDir(t)
 	session := filepath.Join(root, "sessions", "20260707-abc.jsonl")
