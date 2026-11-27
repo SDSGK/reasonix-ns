@@ -23,6 +23,18 @@ var (
 // .ts modules and the loader hooks the virtual module needs arrive with it.
 const MinNodeMajor = 22
 
+// versionProbeTimeout bounds the first attempt at asking the runtime for its
+// version. The answer is one line, but the runtime may be cold: a Windows CI
+// runner scans the node binary on its first run, and a probe that gives up
+// early turns a slow machine into "no runtime at all" — the mods then stay
+// unloaded and the rules they carry stop applying.
+const versionProbeTimeout = 20 * time.Second
+
+// versionProbeRetryTimeout bounds the second attempt. The binary is warm by
+// then — the scan that slowed the first attempt is done — so a runtime that
+// answers at all answers inside this.
+const versionProbeRetryTimeout = 10 * time.Second
+
 // Runtime is the JavaScript runtime a mod runs on.
 type Runtime struct {
 	// Kind is "electron" (Studio's own binary in Node mode) or "node".
@@ -173,14 +185,41 @@ func envList(base []string, extra map[string]string) []string {
 }
 
 // probeVersion asks the runtime for its Node version, without a shell and under
-// a short limit.
+// a short limit. A runtime that is cold — the node binary on a Windows CI
+// runner is read from disk and scanned on its first run — can miss the first
+// limit even though it is there and well, so the question is asked twice: the
+// binary is warm the second time it runs.
 func probeVersion(ctx context.Context, path string, env []string) (string, error) {
-	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	return probeWithRetry(ctx, func(ctx context.Context, budget time.Duration) (string, error) {
+		return probeVersionOnce(ctx, path, env, budget)
+	})
+}
+
+// probeWithRetry asks the runtime once and asks again when the attempt ran out
+// of time. A runtime that answered — or that failed for any other reason — is
+// asked once: it is either there or broken, and asking a broken runtime again
+// only makes the wait longer.
+func probeWithRetry(ctx context.Context, ask func(context.Context, time.Duration) (string, error)) (string, error) {
+	version, err := ask(ctx, versionProbeTimeout)
+	if err == nil || !errors.Is(err, context.DeadlineExceeded) {
+		return version, err
+	}
+	return ask(ctx, versionProbeRetryTimeout)
+}
+
+// probeVersionOnce asks the runtime once, under a limit of its own. A limit
+// that ran out is reported as context.DeadlineExceeded, so the caller can tell
+// a runtime that was slow from one that answered and was refused.
+func probeVersionOnce(ctx context.Context, path string, env []string, budget time.Duration) (string, error) {
+	ctx, cancel := context.WithTimeout(ctx, budget)
 	defer cancel()
 	cmd := exec.CommandContext(ctx, path, "-p", "process.versions.node")
 	cmd.Env = env
 	out, err := cmd.Output()
 	if err != nil {
+		if errors.Is(ctx.Err(), context.DeadlineExceeded) {
+			return "", fmt.Errorf("asking %s for its version: %w", path, context.DeadlineExceeded)
+		}
 		return "", fmt.Errorf("asking %s for its version: %w", path, err)
 	}
 	return strings.TrimSpace(string(out)), nil

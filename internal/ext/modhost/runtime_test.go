@@ -3,8 +3,10 @@ package modhost
 import (
 	"context"
 	"errors"
+	"fmt"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"reasonix/internal/base/testenv"
 )
@@ -73,5 +75,32 @@ func TestAProjectSymlinkToNodeDoesNotHideIt(t *testing.T) {
 	r := Resolver{Workspace: root, LookPath: func(string) (string, error) { return link, nil }, Probe: fakeProbe("24.0.0")}
 	if _, err := r.Resolve(context.Background()); !errors.Is(err, ErrRuntimeMissing) {
 		t.Fatalf("a link into the project = %v, want it refused", err)
+	}
+}
+
+// A runtime that is slow to answer is asked again: a cold binary is warm the
+// second time it runs. A runtime that failed for any other reason is asked
+// once, because asking a broken runtime again only makes the wait longer.
+func TestTheVersionProbeIsAskedAgainAfterATimeoutAndOnlyOnceAfterAFailure(t *testing.T) {
+	calls := 0
+	ask := func(context.Context, time.Duration) (string, error) {
+		calls++
+		if calls == 1 {
+			return "", fmt.Errorf("cold: %w", context.DeadlineExceeded)
+		}
+		return "24.1.0", nil
+	}
+	version, err := probeWithRetry(context.Background(), ask)
+	if err != nil || version != "24.1.0" || calls != 2 {
+		t.Fatalf("version = %q, %v after %d calls", version, err, calls)
+	}
+
+	calls = 0
+	ask = func(context.Context, time.Duration) (string, error) {
+		calls++
+		return "", errors.New("no such runtime")
+	}
+	if _, err := probeWithRetry(context.Background(), ask); err == nil || calls != 1 {
+		t.Fatalf("a broken runtime was asked %d times: %v", calls, err)
 	}
 }

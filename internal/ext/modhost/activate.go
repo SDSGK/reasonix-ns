@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"os"
 	"path"
 	"path/filepath"
@@ -70,10 +71,14 @@ func Packages(ctx context.Context, d Deps, installed []pluginpkg.InstalledPackag
 		if errors.Is(err, ErrRuntimeUnsupported) {
 			code = CodeRuntimeUnsupport
 		}
+		names := make([]string, 0, len(mods))
 		for _, m := range mods {
 			reg.Set(Status{Plugin: m.Plugin, State: StateInactive, Code: code, Detail: err.Error()})
+			names = append(names, m.Plugin)
 		}
-		return nil, nil
+		// The mods are not running, and their rules are not in force. Say so:
+		// a mod that silently stays away is a mod whose denials do not apply.
+		return nil, []string{fmt.Sprintf("mods: %s did not load: %v", strings.Join(names, ", "), err)}
 	}
 	script, err := WriteScript(filepath.Join(d.StateRoot, "modhost"))
 	if err != nil {
